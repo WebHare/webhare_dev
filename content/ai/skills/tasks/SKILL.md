@@ -158,6 +158,49 @@ The HareScript equivalent is `ScheduleTimedTask("mymodule:dailycleanup",
 soon as possible); HareScript also supports `allowmissing`, while the current
 TypeScript API does not.
 
+### Activate a newly declared timed task
+
+A `<task>` added to `moduledefinition.xml` is not known to the task scheduler
+until WebHare performs a soft reset. Running `wh apply all` (or applying only
+the module's WRD schema or registry) does not register it. Until then,
+`ScheduleTimedTask("module:tag")` throws `No such timed task 'module:tag'
+registered`. After adding the declaration, run `wh softreset` on the
+development installation (this restarts services) before testing code that
+schedules the task. Code that can run before the module is fully installed,
+for example from a Tollium screen's save handler, can pass
+`[ allowmissing := TRUE ]` in HareScript.
+
+### Pattern: run at a per-record moment ("24 hours before X")
+
+To act at a moment derived from data (for example, send a mail 24 hours
+before each event starts) without polling every minute:
+
+1. Declare a timed task with an infrequent `runat` (for example daily) as a
+   safety net.
+2. In each run, process every record that is due. At the end, compute the
+   earliest future due moment and call
+   `ScheduleTimedTask("module:tag", [ when := nextmoment ])`. A `when` later
+   than an already scheduled run is ignored, so this is safe to call each run.
+3. Wherever the underlying data is edited (for example the `AfterStore` of a
+   WRD entity edit screen), request a run as soon as possible with
+   `ScheduleTimedTask("module:tag")` inside the open work, so the next moment
+   is recalculated.
+4. Make each run idempotent: record per item that the action was done (for
+   example a `...sent` datetime field), and have the actual side effect
+   recheck its preconditions, because the data may have changed after it was
+   queued.
+
+Do the side effect itself (such as sending mail) in a managed task queued by
+the timed task, so it gets the managed task's retries.
+
+### Wait for a managed task (HareScript)
+
+`RetrieveManagedTaskResult(taskid, maxwait)` from `mod::system/lib/tasks.whlib`
+waits for the task and returns its result. It throws if the task failed
+(options `acceptcancel`, `accepttempfailure` and `accepttimeout` relax this)
+and throws when called with work open. Commit the work that scheduled the task
+first.
+
 ## Verification
 
 1. Confirm the registration shape and options against the current

@@ -11,13 +11,44 @@ When adding or modifying HareScript tests, follow the [HareScript development sk
 
 ## Validate and run
 
-1. Check TypeScript diagnostics with the editor's diagnostics tool. For HareScript (`.whscr`), use the available WebHare validation tool.
-2. Run the narrow affected test using the available WebHare test tool, passing the full test-file path. Discover the tool before invoking it; tool names vary between integrations.
-3. If the test tool is unavailable, use `wh runtest <testname>` or `wh runtest -- /absolute/path/to/test.ts`. For example, `wh runtest tollium.richdoc.teststructured-tables`.
-4. Run tests serially: they share a global testframework lock. Do not kill another developer's test to acquire the lock; report blocked verification.
-5. On failure, inspect the reported log and screenshot. Read logs in bounded sections and use the failure location to narrow the investigation.
+1. Validate touched files with `wh validate <filename>`. This covers HareScript (`.whscr`/`.whlib`) and XML resources, but for TypeScript it only runs the linter: type errors are reported by `wh checkmodule` (see below).
+2. Run the narrow affected test with `wh runtest <testname>` or `wh runtest -- /absolute/path/to/test.ts`. For example, `wh runtest tollium.richdoc.teststructured-tables`.
+3. Run tests serially: they share a global testframework lock. Do not kill another developer's test to acquire the lock; report blocked verification.
+4. On failure, inspect the reported log and screenshot. Read logs in bounded sections and use the failure location to narrow the investigation.
 
-For module-wide validation, use `wh checkmodule <modulename>` or the available WebHare module-check tool. This takes longer than focused diagnostics and complements rather than replaces behavioral tests.
+For module-wide validation, including the TypeScript type check, use `wh checkmodule <modulename>`. This takes longer than focused diagnostics and complements rather than replaces behavioral tests.
+
+## Module tests and HareScript test helpers
+
+- A module's tests are listed in its `tests/testinfo.xml` (`<test script="..."/>`
+  for HareScript, `<jstest file="..."/>` for frontend tests). Add a new test
+  file there and run it as `wh runtest <module>.<testname>`, for example
+  `wh runtest mymodule.test_remindermail`.
+- `testfw->ExtractAllMailFor(address)` waits for and consumes mail sent to
+  `address`. It expects exactly one mail by default and throws `Timeout
+  retrieving emails - expected 1 emails, got 0` otherwise. To assert that *no*
+  mail arrived, pass `[ count := 0, timeout := 2000 ]` and check that the
+  result is empty. Discard mail from setup steps (such as registration
+  confirmations) before the step under test so later assertions are not
+  confused by it.
+- To test code that queues a managed task, commit the work and wait with
+  `RetrieveManagedTaskResult`; see the [tasks skill](../tasks/SKILL.md).
+- A test that schedules a newly declared timed task needs a `wh softreset`
+  first; see the [tasks skill](../tasks/SKILL.md).
+- Tollium screen tests (`mod::tollium/lib/testframework.whlib`): use
+  `ExpectAndAnswerMessageBox(answer, PTR trigger, [ messagemask := "..." ])`
+  only for a single message box. When answering one box immediately opens
+  another (for example a confirmation followed by an error), the second box
+  *replaces* the first, so the screen count does not change. Chain it as:
+
+  ```harescript
+  AWAIT ExpectScreenChange(+1, PTR TT("publish")->TolliumClick()); // confirmation opens
+  AWAIT ExpectScreenChange(0, PTR TTClick(":Yes"));                // replaced by the error box
+  AWAIT AnswerMessageBox("ok", [ messagemask := "*not contain a valid name*" ]);
+  ```
+
+  Errors added to a work or feedback object are shown in one error box, with
+  the messages joined by newlines, when `Finish()` runs.
 
 ## CLI command discovery
 

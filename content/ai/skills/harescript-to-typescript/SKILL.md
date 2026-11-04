@@ -52,9 +52,9 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 4. Validate compatibility:
 - inspect side effects and the intended target before executing a migrated script. A development DTAP stage is not proof that a server is disposable.
 - never run `tests/system/twohare/prepare-server2.ts` on a normal WebHare installation, even for validation. It creates a sysop with a known password and enables dynamic client registration; execution is restricted to the isolated second Twohare test server. Use static diagnostics elsewhere, and do not assume `wh run ... --help` is a safe validation shortcut without verifying its execution path.
-- run get_errors on changed .ts files
-- run webhare_validate for modified HareScript/XML resources when applicable
-- run webhare_runtest for relevant tests when practical
+- run `wh validate <filename>` on changed .ts files (lint only) and modified HareScript/XML resources
+- run `wh checkmodule <modulename>` to type-check the TypeScript; `wh validate` does not report type errors
+- run `wh runtest <test name or full path>` for relevant tests when practical
 - do not use tsc or npm test as primary verification for WebHare module migrations
 
 5. Rollout cleanup for scheduled tasks:
@@ -72,7 +72,7 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 - No unrelated formatting or API churn
 
 # Notes
-- When adding or substantively editing remaining HareScript, follow the [HareScript development skill](../harescript-development/SKILL.md) for K&R style without unrelated formatting churn.
+- When adding or substantively editing remaining HareScript, follow the [HareScript development skill](../harescript-development/SKILL.md) for K&R style without unrelated formatting churn, and for calling the converted TypeScript from remaining HareScript with `CallJS`.
 - If the target is a command-line script, apply the separate CLI-specific skill.
 - Keep legacy HareScript files in place until all callers are migrated, unless explicitly asked to remove them.
 - Exception: for moduledefinition task migrations, after updating the task reference to .ts, explicitly offer deletion of the legacy .whscr and remove it when approved.

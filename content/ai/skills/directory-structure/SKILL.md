@@ -1,9 +1,17 @@
 ---
 name: directory-structure
-description: Explains how to navigate WebHare Platform and WebHare module directory structure. Use this skill to find things especially how to resolve module references (`<modulename>:<tag>`) or `mod::<module>/` paths which are used everywhere in a WebHare installation
+description: Explains how to navigate WebHare Platform and WebHare module directory structure. Use this skill to find things especially how to resolve module references (`<modulename>:<tag>`), `mod::<module>/` paths or `@mod-<module>/` imports which are used everywhere in a WebHare installation
 ---
 
 Every directory containing 'moduledefinition.xml' or 'moduledefinition.yml' starts a module (named after the directory it contains)
+
+To find the module a file belongs to, walk up from the file's folder to the nearest folder containing `moduledefinition.xml` or `moduledefinition.yml`. That folder's name is the module name, and the file's path relative to that folder is its path inside the module. Eg `.../mymodule/js/helpers.ts` is `js/helpers.ts` in module `mymodule`.
+
+A file can then be referenced as:
+- `mod::<module>/<path>` in HareScript, XML and other resource references, eg `mod::mymodule/js/helpers.ts`
+- `@mod-<module>/<path>` in TypeScript/JavaScript imports, eg `import { ... } from "@mod-mymodule/js/helpers";`
+
+Use these instead of relative imports when referring to files in another module. Importing from another module requires a dependency on it; see the [modules skill](../modules/SKILL.md).
 
 A module reference (`<modulename>:<tag>`) generally refers to the moduledefinition file in folder 'module' - and there you look for the tag in the appropriaty section
 to find paths that will be relative to the module root (or refer to other modules if they start with `mod::`)
