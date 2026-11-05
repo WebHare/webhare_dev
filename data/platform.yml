@@ -1,0 +1,13 @@
+# Global WebHare truths
+# Also reflected in eg https://www.webhare.dev/meta/buildimage/stable
+
+branch:
+  main:
+    semver: "6.2"
+    image: docker.io/webhare/platform:main
+  beta:
+    semver: "6.1"
+    image: docker.io/webhare/platform:release-6-1
+  stable:
+    semver: "5.9"
+    image: docker.io/webhare/platform:release-5-9

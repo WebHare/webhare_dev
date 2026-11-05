@@ -1,0 +1,4 @@
+moduleFileTypes:
+  - resourceMask: ^mod::webhare_dev/data/platform.yml$
+    schema: data/schemas/platform.schema.yml
+    tsType: PlatformMetaType

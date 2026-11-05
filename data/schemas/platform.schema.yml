@@ -1,0 +1,28 @@
+"$schema": http://json-schema.org/draft-07/schema#
+type: object
+additionalProperties: false
+required: [ branch ]
+properties:
+  branch:
+    type: object
+    additionalProperties: false
+    required: [ main, beta, stable ]
+    properties:
+      main:
+        $ref: "#/$defs/schemas/Branch"
+      beta:
+        $ref: "#/$defs/schemas/Branch"
+      stable:
+        $ref: "#/$defs/schemas/Branch"
+
+$defs:
+  schemas:
+    Branch:
+      type: object
+      additionalProperties: false
+      required: [ semver, image]
+      properties:
+        semver:
+          type: string
+        image:
+          type: string
