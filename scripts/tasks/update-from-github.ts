@@ -42,6 +42,7 @@ runCli({
       await git(["-C", checkout, "merge", "--ff-only", "origin/main"]);
     }
     const currentCommit = await git(["-C", checkout, "rev-parse", "HEAD"]);
+    //import-repo syncs the site folder (and generates ai/index.json) from the checkout. Also run it if that never happened
     if (currentCommit !== previousCommit)
       await runInWork(() => scheduleTimedTask("webhare_dev:import_repo"));
     return 0;
