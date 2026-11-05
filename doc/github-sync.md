@@ -6,4 +6,10 @@ of https://github.com/WebHare/webhare_dev into
 Updates fail rather than overwrite conflicting local changes or divergent history.
 An initial clone or a change to the checked-out commit schedules the `import_repo`
 task to run `scripts/tasks/import-repo.ts`. Unchanged checkouts do not schedule an
-import. The import script is currently a placeholder.
+import, unless `storage::webhare_dev/site/ai/index.json` is missing.
+
+## Import
+The `import_repo` task mirrors the checkout's `content/` folder to `storage::webhare_dev/site/`, converting all
+file and folder names to lowercase (the webserver folds requested URLs to lowercase). Files that no longer exist
+in the checkout are removed from the site folder. It then generates `ai/index.json` there, listing the AI skills
+in `content/ai/skills/` with their original names and paths. See [AI skills](ai-skills.md).
