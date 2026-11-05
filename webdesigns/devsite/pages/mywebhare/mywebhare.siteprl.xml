@@ -1,0 +1,18 @@
+<siteprofile xmlns="http://www.webhare.net/xmlns/publisher/siteprofile">
+
+  <filetype namespace="http://www.webhare.dev/xmlns/mywebhare"
+            kind="virtualfile"
+            isacceptableindex="true"
+            title="my.webhare.dev">
+    <dynamicexecution webpageobjectname="./mywebhare.whlib#MyWebharePage" />
+  </filetype>
+
+  <sitesettings sitemask="my.webhare.dev">
+    <webruleset xmlns="http://www.webhare.net/xmlns/system/moduledefinition">
+      <webrule path="/" match="initial">
+        <tryfile path="siteoutput::[sitename]/index.shtml" />
+      </webrule>
+    </webruleset>
+  </sitesettings>
+
+</siteprofile>

@@ -1,0 +1,379 @@
+<?wh
+
+LOADLIB "wh::adhoccache.whlib";
+LOADLIB "wh::files.whlib";
+LOADLIB "wh::filetypes/markdown.whlib";
+LOADLIB "wh::util/algorithms.whlib";
+
+LOADLIB "mod::consilio/lib/api.whlib";
+
+LOADLIB "mod::system/lib/resources.whlib";
+
+LOADLIB "mod::webhare_dev/lib/devsite/parsers.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/components.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/fs.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/moduledefdocparser.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/settings.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/sourcefiles.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/topics.whlib";
+
+PUBLIC STRING FUNCTION __GetPageURLForSymbol(RECORD pagedata, RECORD symbol)
+{
+  IF (NOT symbol.definition.docpublic)
+    RETURN "";
+
+  RECORD topic := symbol.topic;
+  IF (NOT RecordExists(topic))
+    RETURN "";
+
+  STRING path := ToLowercase(Substitute(EncodeURL(Tokenize(symbol.symbolref || "#", "#")[1]), "::", "/"));
+  RETURN `${RecordExists(pagedata) ? pagedata.referenceroot : ""}${topic.name}/symbol/${path}`;
+}
+
+
+
+PUBLIC RECORD ARRAY FUNCTION LookupIdentifier(STRING symbol, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  options := ValidateOptions([ publiconly := TRUE, fs := DEFAULT OBJECT ], options, [ required := [ "fs" ]]);
+
+  OBJECT source := NEW SourceIndex(GetIndexModules(options.publiconly, CELL[ options.fs ]), options.fs);
+  TRY
+  {
+    RECORD res := source->GetSymbolDefinition("%" || symbol);
+    INSERT CELL referencelink := __GetPageURLForSymbol(DEFAULT RECORD, res) INTO res;
+    RETURN [res];
+  }
+  CATCH
+  {
+    RETURN RECORD[];
+  }
+}
+
+RECORD FUNCTION GetCachableIdentifierList(OBJECT fs, STRING intopic)
+{
+  RETURN
+      [ ttl :=          60 * 1000
+      , value :=        RunConsilioSearch(devconstants.catalog_sourcecode, CQOpenSearch([ match_bool_prefix := [ "topic" := intopic || "/" ]]), [ count := -1 ]).results
+      , eventmasks :=   [ "dev:clearidentifierlists" ]
+      ];
+}
+
+PUBLIC RECORD ARRAY FUNCTION GetIdentifiersForTopic(STRING intopic, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  options := ValidateOptions([ publiconly := TRUE, fs := DEFAULT OBJECT ], options, [ required := [ "fs" ]]);
+  OBJECT source := NEW SourceIndex(GetIndexModules(options.publiconly, CELL[ options.fs ]), options.fs);
+
+  RECORD ARRAY results := GetAdhocCached(CELL
+      [ "identifiersintopic"
+      , cachekey := options.fs->GetCacheKey()
+      , intopic
+      ], PTR GetCachableIdentifierList(options.fs, intopic));
+
+  FOREVERY (STRING path FROM SELECT AS STRING ARRAY DISTINCT COLUMN path FROM results WHERE sourcetype = "harescript")
+    source->GatherPublicSymbolsInLibrary(path);
+  RETURN SELECT * FROM source->public_symbols WHERE RecordExists(topic) AND topic.name = intopic;
+}
+
+/** Returns all components in a specific topic
+    @param intopic Topic name
+    @cell options.publiconly Only public components
+    @cell options.fs Filesystem
+    @return @includecelldef #GetComponentElements.return
+*/
+PUBLIC RECORD ARRAY FUNCTION GetComponentsForTopic(STRING intopic, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  options := ValidateOptions([ publiconly := TRUE, fs := DEFAULT OBJECT ], options, [ required := [ "fs" ]]);
+  OBJECT source := NEW SourceIndex(GetIndexModules(options.publiconly, CELL[ options.fs ]), options.fs);
+
+  RECORD ARRAY results := GetAdhocCached(CELL
+      [ "identifiersintopic"
+      , cachekey := options.fs->GetCacheKey()
+      , intopic
+      ], PTR GetCachableIdentifierList(options.fs, intopic));
+
+  STRING ARRAY resources := SELECT AS STRING ARRAY DISTINCT COLUMN path FROM results WHERE sourcetype = "xsd" AND type = "component";
+  RECORD ARRAY componentsources := options.fs->DevGetComponentSources("tolliumcomponents") CONCAT options.fs->DevGetComponentSources("formcomponents");
+
+  RECORD ARRAY elements;
+  FOREVERY (RECORD componentsource FROM componentsources)
+    IF (componentsource.resourcename IN resources AND NOT componentsource.skipdocumentation)
+      elements := elements CONCAT GetComponentElements(options.fs, componentsource.resourcename);
+
+  RETURN SELECT * FROM elements WHERE Tokenize(topic, "/")[0] = intopic;
+}
+
+/** Returns all database schemas and tables in a specific topic
+    @param intopic Topic name
+    @cell options.publiconly Only public components
+    @cell options.fs Filesystem
+    @return @includecelldef #ParseModuleDefinitionDocumentation.return
+*/
+PUBLIC RECORD ARRAY FUNCTION GetSchemasAndTablesForTopic(STRING intopic, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  options := ValidateOptions([ publiconly := TRUE, fs := DEFAULT OBJECT ], options, [ required := [ "fs" ]]);
+  OBJECT source := NEW SourceIndex(GetIndexModules(options.publiconly, CELL[ options.fs ]), options.fs);
+
+  RECORD ARRAY results := GetAdhocCached(CELL
+      [ "identifiersintopic"
+      , cachekey := options.fs->GetCacheKey()
+      , intopic
+      ], PTR GetCachableIdentifierList(options.fs, intopic));
+
+  STRING ARRAY resources := SELECT AS STRING ARRAY DISTINCT COLUMN path FROM results WHERE sourcetype = "moduledefinition" AND type IN [ "schema", "table" ];
+  RECORD ARRAY elements;
+  FOREVERY (STRING resource FROM resources)
+    elements := elements CONCAT
+        SELECT *
+          FROM ParseModuleDefinitionDocumentation(options.fs, resource)
+         WHERE Tokenize(topic, "/")[0] = intopic;
+
+  RETURN elements;
+}
+
+/** Returns documents in a topic
+    @param topicinfo Parsed topic
+    @param docs List of document files
+    @param fs File system
+    @return List of documents, in specified document order
+    @cell return.tag Document tag
+    @cell return.sublink Link to document
+    @cell return.title Title of the document
+    @cell return.shortdescription Short description
+*/
+RECORD ARRAY FUNCTION EnrichDocs(RECORD topicinfo, RECORD ARRAY docs, OBJECT fs)
+{
+  docs := SELECT TEMPORARY basename := ToLowercase(GetBasenameFromPath(name))
+               , TEMPORARY md := ParseMarkdown(BlobToString(GetWebhareResource(resourcepath)))
+               , name :=              basename
+               , sublink :=           topicinfo.name || "/" || basename
+               , title :=             GetMDTitle(md)
+               , shortdescription :=  ""
+               , resourcename :=      resourcepath
+            FROM docs
+           WHERE name != "intro.md";
+
+  // Order by explicit order first, then by tag
+  docs := SELECT *
+            FROM docs
+           ORDER BY name IN topicinfo.docorder ? SearchElement(topicinfo.docorder, name) : 999999999
+                  , name;
+
+  RETURN docs;
+}
+
+PUBLIC STRING FUNCTION GetSymbolTitle(RECORD symbol)
+{
+//if(symbol.name="NEW")abort(symbol);
+  RECORD def := symbol.definition;
+  IF (symbol.symboltype IN [ "function", "method" ])
+  {
+    STRING title;
+    IF (def.isasync)
+      title := `ASYNC ${def.isfunction?"FUNCTION":"MACRO"}${def.isgenerator?" *":""}`;
+    ELSE IF (def.isgenerator)
+      title := `FUNCTION *`;
+    ELSE
+      title := `${def.isfunction?`${def.type} FUNCTION`:"MACRO"}`;
+    RETURN `${title} ${symbol.name}(${Detokenize((SELECT AS STRING ARRAY `${type} ${name}` FROM def.params), ", ")})`;
+  }
+  ELSE IF (symbol.symboltype = "objecttype")
+  {
+    RETURN `OBJECTTYPE ${symbol.name}`;//${def.baseobject != "" ? ` EXTEND ${def.baseobject}` : ""}
+  }
+  ELSE IF (symbol.symboltype IN [ "variable", "member" ])
+  {
+    IF (CellExists(symbol, "parentschema") AND symbol.parentschema != "")
+      RETURN `${def.isconstant ? "CONSTANT " : ""}SCHEMA< ${def.type} ${symbol.name} > ${symbol.parentschema}`;
+
+    RETURN `${def.isconstant ? "CONSTANT " : ""}${def.type} ${symbol.name}`;
+  }
+  ELSE IF (symbol.symboltype = "property")
+  {
+    RETURN `PROPERTY ${symbol.name}`;
+  }
+  ELSE
+    RETURN symbol.name;
+}
+
+/** Returns the sections with document identifiers in a topic
+    @param topicinfo Parsed topic @includecelldef parsers.whlib#ParseTopic.return
+    @param ids List of symbols
+    @param components List of components @includecelldef #GetComponentsForTopic.return
+    @param tableschemas List of tables/schemas @includecelldef #GetSchemasAndTablesForTopic.return
+    @return List of sections
+    @cell return.name Name of the section
+    @cell return.shortdescription Description of the section
+    @cell return.resources List of libraries that contributed to this section
+    @cell return.identifiers List of identifiers in this section
+    @cell return.identifiers.name Name of the identifier
+    @cell return.identifiers.title Title for the identifier
+    @cell return.identifiers.comment Comment token of the identifier @includecelldef ../internal/comments.whlib#commentcontentbase
+    @cell return.identifiers.sublink Link to the identifier page
+    @cell return.components List of components @includecelldef #GetComponentsForTopic.return
+    @cell return.tableschemas List of tables and schemas @includecelldef #GetSchemasAndTablesForTopic.return
+*/
+PUBLIC RECORD ARRAY FUNCTION EnrichSections(RECORD topicinfo, RECORD ARRAY ids, RECORD ARRAY components, RECORD ARRAY tableschemas)
+{
+  // Prefill the sectionlist
+  RECORD ARRAY sectionlist :=
+      SELECT name
+           , title
+           , description
+           , identifiers :=   RECORD[]
+           , components :=    RECORD[]
+           , resources :=     STRING[]
+        FROM topicinfo.sections;
+
+  FOREVERY (RECORD id FROM ids)
+  {
+    RECORD idrec :=
+        CELL[ id.name
+            , id.definition.comment
+            , id.definition.parsedcomment
+            , id.definition.symboltype
+            , title :=        GetSymbolTitle(id)
+            , sublink :=      ToLowercase(topicinfo.name) || "/symbol/" || id.urlpart
+            ];
+
+    INTEGER idx := (SELECT AS INTEGER #sectionlist + 1 FROM sectionlist WHERE name = id.topic.section) - 1;
+    IF (idx >= 0)
+    {
+      // Keep the list of libraries sorted
+      sectionlist[idx].resources := GetSortedSet(STRING[ ...sectionlist[idx].resources, id.resourcename ]);
+      INSERT idrec INTO sectionlist[idx].identifiers AT END;
+    }
+    ELSE
+    {
+      INSERT
+          CELL[ name :=               id.topic.section
+              , title :=              id.topic.section
+              , description :=        ""
+              , resources :=          STRING[ id.resourcename ]
+              , identifiers :=        [ idrec ]
+              , components :=         RECORD[]
+              ] INTO sectionlist AT END;
+    }
+  }
+
+  FOREVERY (RECORD component FROM components)
+  {
+    RECORD comprec :=
+        CELL[ component.name
+            , comment :=      DEFAULT RECORD
+            , component.parsedcomment
+            , symboltype :=   "component"
+            , title :=        component.componenttype = "tolliumcomponent" ? `Tollium component <${component.name}>`
+                              : component.componenttype = "formcomponent" ? `Form component <${component.name}>`
+                              : component.componenttype = "formhandler" ? `Form handler <${component.name}>`
+                              : component.name
+            , sublink :=      ToLowercase(topicinfo.name) || "/component/" || component.name
+            ];
+
+    STRING section := Tokenize(component.topic || "/", "/")[1];
+    INTEGER idx := (SELECT AS INTEGER #sectionlist + 1 FROM sectionlist WHERE name = section) - 1;
+    IF (idx >= 0)
+    {
+      // Keep the list of libraries sorted
+      sectionlist[idx].resources := GetSortedSet(STRING[ ...sectionlist[idx].resources, component.resourcename ]);
+      INSERT comprec INTO sectionlist[idx].components AT END;
+    }
+    ELSE
+    {
+      INSERT
+          CELL[ name :=               section
+              , title :=              section
+              , description :=        ""
+              , resources :=          STRING[ component.resourcename ]
+              , identifiers :=        RECORD[]
+              , components :=         [ comprec ]
+              ] INTO sectionlist AT END;
+    }
+  }
+
+  FOREVERY (RECORD elt FROM tableschemas)
+  {
+    RECORD rec :=
+        CELL[ name :=         elt.elttype = "schema" ? elt.schemaname : `${elt.schemaname}.${elt.name}`
+            , comment :=      DEFAULT RECORD
+            , elt.parsedcomment
+            , symboltype :=   elt.elttype
+            , title :=        elt.elttype = "schema" ? elt.schemaname : `${elt.schemaname}.${elt.name}`
+            , sublink :=      ToLowercase(topicinfo.name) || (elt.elttype = "schema" ? "/schema/" || elt.schemaname : `/table/${elt.schemaname}/${elt.name}`)
+            ];
+
+    STRING section := Tokenize(elt.topic || "/", "/")[1];
+    INTEGER idx := (SELECT AS INTEGER #sectionlist + 1 FROM sectionlist WHERE name = section) - 1;
+    IF (idx >= 0)
+    {
+      // Keep the list of libraries sorted
+      sectionlist[idx].resources := GetSortedSet(STRING[ ...sectionlist[idx].resources, elt.resourcename ]);
+      INSERT rec INTO sectionlist[idx].identifiers AT END;
+    }
+    ELSE
+    {
+      INSERT
+          CELL[ name :=               section
+              , title :=              section
+              , description :=        ""
+              , resources :=          STRING[ elt.resourcename ]
+              , identifiers :=        [ rec ]
+              , components :=         RECORD[]
+              ] INTO sectionlist AT END;
+    }
+  }
+
+
+  // Filter out empty sections
+  RETURN
+      SELECT *
+        FROM sectionlist
+       WHERE LENGTH(identifiers) != 0 OR LENGTH(components) != 0;
+}
+
+/** Returns information about a topic
+    @param topic Name of the topic
+    @param options Options
+    @cell options.publiconly If set to FALSE, return private symbols too
+    @cell(object ../internal/fs.whlib#DevFileSystem) options.fs Filesystem to use
+    @return Topic info
+    @cell return.name Topic name
+    @cell return.title Topic title
+    @cell return.shortdescription Topic short description
+    @cell return.subpages List of documents @includecelldef #EnrichDocs.return
+    @cell return.sections List of sections @includecelldef #EnrichSections.return
+    @cell return.sublink Sublink to the topic
+*/
+PUBLIC RECORD FUNCTION GetDevTopic(STRING topic, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  options := ValidateOptions([ publiconly := TRUE, fs := DEFAULT OBJECT ], options, [ required := [ "fs" ] ]);
+
+  OBJECT fs := options.fs ?? NEW DevFileSystem;
+
+  RECORD baseinfo :=
+      SELECT *
+        FROM GetAllTopics(fs)
+       WHERE name = topic;
+
+  IF (NOT RecordExists(baseinfo))
+    RETURN DEFAULT RECORD;
+
+  //TODO prepare warnings about missing things
+
+  RECORD ARRAY subpages := EnrichDocs(baseinfo, (SELECT * FROM ReadWebHareResourceFolder(baseinfo.resourcepath) WHERE name LIKE '*.md'), fs);
+  RECORD ARRAY sections := EnrichSections(
+      baseinfo,
+      GetIdentifiersForTopic(topic, CELL[ options.publiconly, options.fs ]),
+      GetComponentsForTopic(topic, CELL[ options.publiconly, options.fs ]),
+      GetSchemasAndTablesForTopic(topic, CELL[ options.publiconly, options.fs ])
+      );
+
+  RETURN CELL
+      [ baseinfo.title
+      , baseinfo.name
+      , baseinfo.shortdescription
+      , baseinfo.resourcepath
+      , subpages
+      , sections
+      , sublink :=          topic
+      ];
+}

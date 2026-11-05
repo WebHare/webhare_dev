@@ -1,0 +1,191 @@
+<div class="whwp-survey">
+  [if title]
+    <h2 class="whwp-title">[title]</h2>
+  [/if]
+
+  [if description]
+    <p class="normal">[description]</p>
+  [/if]
+
+  [if finished]
+    <p class="normal">[successmessage]</p>
+
+  [else]
+    [if anyrequired]
+      <p class="normal">[lang.required_string]<br /><br /></p>
+    [/if]
+
+    <form class="wh-form" name="questions" action="[feedbackpage]" method="post" enctype="multipart/form-data">
+      [if showresults]
+        <p class="normal">[beforeresults]</p>
+        [forevery results.pages]
+          [forevery groups]
+            <fieldset>
+              <p class="normal">
+                <legend>
+                [if title]
+                  <b>[title]</b>
+                [else]
+                  <b>[name]</b>
+                [/if]
+                </legend>
+                [forevery questions]
+                <p class="normal">
+                  <b>[question]</b><br />
+                  [answer]<br>
+                </p>
+                [/forevery]
+              </p>
+            </fieldset>
+            <br />
+          [/forevery]
+        [/forevery]
+
+        <p class="normal">[afterresults]</p>
+
+      [else]
+        [if pagetitle]
+          <div class="formtitle">[pagetitle]</div>
+        [/if]
+        [if pagedescription]
+          <p class="normal">[pagedescription]</p>
+        [/if]
+        [forevery surveygroups]
+          <div class="group">
+            [if title]<strong class="grouptitle">[title]</strong><br />[/if]
+            [if description]
+              <div class="formintro">[description]</div>
+            [/if]
+
+            [forevery questions]
+              <div class="fieldgroup [if required]required[/if] [if warnrequired]invalid[/if]">
+
+                [if title]
+                  <label for="whwp-q[id]">[title][if required][lang.required_indicator][/if]</label>
+                [/if]
+
+                [if singleline]
+                  <input id="whwp-q[id]" type="text" name="[name]" value="[currentvalue]" maxlength="[maxlength]" size="[width]" [if question_tag]data-question-tag="[question_tag]"[/if] [if warnrequired]class="errors"[/if] />
+                [/if]
+
+                [if multiline]
+                  <textarea id="whwp-q[id]" name="[name]" rows="[rows]" cols="[cols]" [if question_tag]data-question-tag="[question_tag]"[/if] [if warnrequired]class="errors"[/if]>[currentvalue:value]</textarea>
+                [/if]
+
+                [if date]
+                  <span style="white-space: nowrap;" class="dategroup" [if question_tag]data-question-tag="[question_tag]"[/if]>
+                    <input id="whwp-q[id]" type="text" name="day_[name]" placeholder="dd" value="[currentday]" maxlength="2" size="2" [if warnrequired]class="errors"[/if] /> -
+                    <input id="whwp-q[id]" type="text" name="month_[name]" placeholder="mm" value="[currentmonth]" maxlength="2" size="2" [if warnrequired]class="errors"[/if] /> -
+                    <input id="whwp-q[id]" type="text" name="year_[name]" placeholder="jjjj" value="[currentyear]" maxlength="4" size="4" class="year [if warnrequired]errors[/if]" />
+                  </span>
+                [/if]
+
+                [if time]
+                <span style="white-space: nowrap;" [if question_tag]data-question-tag="[question_tag]"[/if] class="timegroup [if warnrequired]errors[/if]">
+                  <input id="whwp-q[id]" type="text" name="hour_[name]" placeholder="uu" value="[currenthour]" maxlength="2" size="2" [if warnrequired]class="errors"[/if] /> :
+                  <input type="text" name="minute_[name]" value="[currentminute]" placeholder="mm" maxlength="2" size="2" [if warnrequired]class="errors"[/if] />
+                </span>
+                [/if]
+
+                [if email]
+                   <input id="whwp-q[id]" type="email" name="[name]" value="[currentvalue]" maxlength="[maxlength]" size="[width]" [if question_tag]data-question-tag="[question_tag]"[/if] [if warnrequired]class="errors"[/if]/>
+                [/if]
+
+                [if hidden]
+                   <input id="whwp-q[id]" type="hidden" name="[name]" value="[currentvalue]" maxlength="[maxlength]" size="[width]" [if question_tag]data-question-tag="[question_tag]"[/if] [if warnrequired]class="errors"[/if]/>
+                [/if]
+
+                [if dropdown]
+                  <select id="whwp-q[id]" name="[name]" [if question_tag]data-question-tag="[question_tag]"[/if] class="wh-pulldown [if warnrequired]errors[/if]">
+                    [forevery options]
+                      <option value="[id]"[if active] selected[/if]>[text]</option>
+                    [/forevery]
+                  </select>
+                [/if]
+
+                [if radio]
+                  <div class="whwp-formgroup formgroup-radio [if warnrequired]errors[/if]" [if question_tag]data-question-tag="[question_tag]"[/if]>
+                    [forevery options]
+                        <input id="whwp-input[id]" type="radio" class="wh-radiobutton" name="[name]" value="[id]"[if active] checked[/if] />
+                        <label for="whwp-input[id]" class="whwp-option[if open][if active][if not currentvalue] error[/if][/if][/if]">
+                          [text]
+                          [if open]
+                            <input type="text" name="[open]" value="[if active][currentvalue][/if]" maxlength="[maxlength]" size="[width]" />
+                          [/if]
+                      </label>
+                    [/forevery]
+                  </div>
+                [/if]
+
+                [if checkbox]
+                  <div class="whwp-formgroup formgroup-checkbox [if warnrequired]errors[/if]" [if question_tag]data-question-tag="[question_tag]"[/if]>
+                  [forevery options]
+
+                    <input id="whwp-input[id]" class="wh-checkbox" type="checkbox" name="[name]" value="[id]"[if active] checked[/if] />
+                    <label for="whwp-input[id]" class="whwp-option[if open][if active][if not currentvalue] error[/if][/if][/if]">
+                      [text]
+                      [if open]
+                        <input type="text" name="[open]" value="[if active][currentvalue][/if]" maxlength="[maxlength]" size="[width]" />
+                      [/if]
+                    </label>
+                  [/forevery]
+                  </div>
+                [/if]
+
+                [if upload]
+                  [if currentvalue]
+                    Current file: [currentvalue]<br />
+                  [/if]
+                  <input id="whwp-q[id]" type="file" name="[name]" size="35" [if question_tag]data-question-tag="[question_tag]"[/if] [if warnrequired]class="errors"[/if] />
+                [/if]
+
+                [if antispam]
+                  [if customantispam]
+                    [customantispam.code]
+                  [else]
+                    <input id="whwp-q[id]" type="text" name="[name]" value="[currentvalue]" maxlength="[maxlength]" size="[width]" [if question_tag]data-question-tag="[question_tag]"[/if] />
+                    <div class="checkstring">([lang.checkspam_string] [spamcheck])</div>
+                  [/if]
+                [/if]
+
+                [if warnrequired]
+                  [if email]
+                    <div class="whwp-errors">Ongeldig emailadres</div>
+                  [else]
+                    [if date]
+                      <div class="whwp-errors">Ongeldig datum</div>
+                    [else]
+                      [if time]
+                        <div class="whwp-errors">Ongeldig tijd</div>
+                      [else]
+                        [if antispam]
+                          <div class="whwp-errors">Vul a.u.b. de bevestigingscode in.</div>
+                        [else]
+                          <div class="whwp-errors">Deze vraag is niet correct beantwoord.</div>
+                        [/if]
+                      [/if]
+                    [/if]
+                  [/if]
+                [/if]
+
+              </div>
+            [/forevery]
+          </div>
+        [/forevery]
+      [/if]
+
+      <div class="formsubmit indentleft">
+        [if prevbutton]
+          <button class="previous inline" name="[prevbutton]" type="submit" value="previous">[lang.button_previous]</button>
+        [/if]
+        [if nextbutton]
+          <button class="next inline" name="[nextbutton]" type="submit" value="next">[lang.button_next]</button>
+        [/if]
+        [if finishbutton]
+          <button class="submit inline" name="[finishbutton]" type="submit" value="finish">[lang.button_finish]</button>
+        [/if]
+      </div>
+
+    </form>
+  [/if]
+</div>

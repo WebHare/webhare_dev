@@ -1,0 +1,63 @@
+html.reference main > .whdoc__hssymbol__container
+{
+  padding-left: 0;
+  padding-right: 0;
+
+  .heading2,
+  .heading3,
+  .normal,
+  .unordered
+  {
+    padding-left: 30px;
+    padding-right: 30px;
+  }
+
+  .unordered .normal
+  {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  table
+  {
+    margin-left: 30px;
+    margin-right: 30px;
+
+    pre
+    {
+      margin: 0;
+    }
+  }
+}
+
+.whdoc__inlinecode,
+.whdoc__inlinecode[class*="language-"]
+{
+  display: inline-block;
+  margin-bottom: 10px;
+  margin-left: 30px;
+  margin-right: 30px;
+  padding: 2px 5px;
+  width: auto;
+}
+
+.whdoc__hssymbol__paramdesc,
+.whdoc__hssymbol__retvaldesc,
+.whdoc__hssymbol__paramcelldesc,
+.whdoc__hssymbol__retvalcelldesc
+{
+  margin-left: 20px;
+}
+
+.whdoc__hssymbol__paramcells,
+.whdoc__hssymbol__retvalcells
+{
+}
+
+.whdoc__objtype
+{
+  ul
+  {
+    padding-left: 0;
+  }
+}

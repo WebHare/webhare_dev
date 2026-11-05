@@ -1,0 +1,351 @@
+@import "../shared/config";
+
+footer
+{
+  background-color: #{$color_darkgrey};
+  color: #fff;
+  position: relative;
+  font-family: "Barlow", Sans-Serif, Arial;
+  min-height: 60px;
+
+  html.manual &,
+  html.reference &
+  {
+    position: absolute;
+    bottom: 0;
+    height: 60px;
+    left: 0;
+    right: 0;
+  }
+
+  & > .centercontainer
+  {
+    position: relative;
+  }
+
+  & a
+  {
+    color: inherit;
+    text-decoration: none;
+    font-family: "Barlow", Sans-Serif, Arial;
+  }
+
+  #topicsnav
+  {
+    padding-top: 25px;
+    margin-left: -15px;
+    margin-bottom: 75px;
+
+    & .title
+    {
+      text-transform: uppercase;
+      font-size: 18px;
+      line-height: 24px;
+      text-align: center;
+      padding-bottom: 30px;
+    }
+
+    & a
+    {
+      display: inline-block;
+      font-size: 14px;
+      height: 30px;
+      line-height: 20px;
+      padding: 5px 15px 5px 25px;
+      border-radius: 15px;
+      border: 1px solid #999;
+      margin-left: 15px;
+      margin-bottom: 15px;
+      position: relative;
+      transition: all 0.2s;
+
+      &:before
+      {
+        content: '';
+        display: block;
+        border-radius: 100%;
+        width: 8px;
+        height: 8px;
+        border: inherit;
+        position: absolute;
+        top: 50%;
+        left: 10px;
+        margin-top: -4px;
+      }
+
+      &:hover, &.active
+      {
+        border-color: #{$color_webhareblue};
+        background-color: #{$color_webhareblue};
+        text-decoration: none;
+
+        &:before
+        {
+          border-color: #fff;
+          background-color: #fff;
+        }
+      }
+    }
+  }
+
+  & .bottomnav
+  {
+    height: 60px;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    left: 0;
+    border-top: 1px solid #5a5a5a;
+    font-size: 15px;
+    line-height: 22px;
+    white-space: nowrap;
+    color: #{$color_greyondark};
+  }
+
+  & #metanav
+  {
+    padding-top: 19px;
+    font-weight: 200;
+
+    & > div
+    {
+      display: inline-block;
+    }
+
+    & > div + div
+    {
+      margin-left: 5vw
+    }
+
+    & a
+    {
+      margin-right: 25px;
+      display: inline-block;
+      position: relative;
+      float: left;
+
+      &.withicon
+      {
+        padding-left: 23px;
+
+        &[href^='tel']
+        {
+          padding-left: 20px;
+        }
+
+        & .fa
+        {
+          text-align: right;
+          position: absolute;
+          top: 4px;
+          left: 0;
+        }
+
+        & .mobile
+        {
+          display: none;
+        }
+      }
+
+      &:hover
+      {
+        text-decoration: underline;
+        color: #fff;
+      }
+    }
+  }
+
+  & #socialnav
+  {
+    position: absolute;
+    top: 50%;
+    height: 22px;
+    right: calc(50% - 512px);
+    margin-top: -11px;
+
+    & > a
+    {
+      font-size: 21px;
+      display: inline-block;
+      margin-left: 25px;
+
+      &:hover
+      {
+        text-decoration: none;
+        color: #{$color_blueondark};
+      }
+    }
+
+    @media(max-width: 1084px)
+    {
+      &
+      {
+        right: 30px;
+      }
+    }
+  }
+
+  @media( max-width: #{$tablet_width_max} )
+  {
+    min-height: 50px;
+
+    html.manual &,
+    html.reference &
+    {
+      height: 50px;
+    }
+
+    & #topicsnav
+    {
+      padding-top: 15px;
+      margin-bottom: 55px;
+      margin-left: -10px;
+
+      & > .title
+      {
+        padding-bottom: 15px;
+      }
+
+      & a
+      {
+        font-size: 12px;
+        height: 24px;
+        padding: 1px 15px 2px 25px;
+        border-radius: 12px;
+        margin-left: 10px;
+        margin-bottom: 10px;
+      }
+    }
+
+/*
+      & #metanav .hidemobile
+    , & #socialnav
+    {
+      display: none;
+    }
+*/
+    & #socialnav
+    {
+      right: 20px;
+
+      & > a
+      {
+        margin-left: 20px;
+      }
+    }
+
+
+    & .bottomnav
+    {
+      height: 50px;
+    }
+
+    & #metanav
+    {
+
+  //    display: flex;
+  //    justify-content: space-between;
+      padding-top: 15px;
+
+      & a
+      {
+        margin-right: 15px;
+      }
+
+/*
+      & .contactnav a
+      {
+        margin-right: 0;
+        margin-left: 20px;
+        padding-left: 20px;
+
+        & .fa
+        {
+          top: 4px;
+        }
+
+        &[href^='tel']
+        {
+          padding-left: 15px;
+        }
+      }
+      */
+    }
+  }
+
+  @media( max-width: 850px )
+  {
+    & #socialnav
+    {
+      display: none;
+    }
+
+    & #metanav
+    {
+      display: flex;
+      justify-content: space-between;
+
+      & .contactnav a
+      {
+        margin-right: 0;
+        margin-left: 20px;
+        padding-left: 20px;
+
+        & .fa
+        {
+          top: 4px;
+        }
+
+        &[href^='tel']
+        {
+          padding-left: 15px;
+        }
+      }
+    }
+  }
+
+  @media( max-width: #{$mobile_width_max} )
+  {
+    & #metanav .hidemobile
+    {
+      display: none;
+    }
+
+    & #metanav
+    {
+      white-space: nowrap;
+      font-size: 13px;
+
+      & a
+      {
+        margin-right: 0;
+        float: none;
+      }
+
+      & .contactnav a
+      {
+        float: none;
+
+        & .desktop
+        {
+          display: none;
+        }
+
+        & .fa-envelope-o
+        {
+          top: 2px;
+        }
+
+        & .mobile
+        {
+          display: inline-block;
+        }
+      }
+
+      & > div + div
+      {
+        margin-left: 0;
+      }
+    }
+  }
+}

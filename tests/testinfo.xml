@@ -1,0 +1,4 @@
+<group xmlns="http://www.webhare.net/xmlns/system/testinfo" site="WebHare Backend">
+  <test script="test_support.whscr" />
+  <test script="test_docrouter.whscr" />
+</group>

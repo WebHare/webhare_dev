@@ -1,0 +1,410 @@
+@import "../../shared/config";
+
+.wh-autocomplete-values
+{
+  list-style-type: none;
+  display: block;
+  margin: 0;
+  padding: 15px 0 !important;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background-color: #fff;
+  border-radius: 3px;
+  border: 1px solid rgba(0,0,0,0.3);
+  box-shadow: 0 0 4px 0 rgba(0, 0, 0, 0.5);
+  z-index: 10;
+
+  & > li
+  {
+    padding: 3px 15px;
+    font-weight: 500;
+    line-height: 28px;
+    cursor: pointer;
+    background-color: #fff;
+    transition: background-color 0.15s;
+    outline: none;
+    color: #4a4a4a;
+    margin-bottom: 0 !important;
+
+    &:before
+    {
+      display: none !important;
+    }
+
+    &.noresults
+    {
+      font-weight: normal;
+      font-style: italic;
+      color: #999;
+      cursor: default;
+    }
+
+    &.suggestion:focus, &.suggestion:hover
+    {
+      background-color: #f8f8f8;
+    }
+
+    & .match
+    {
+      font-weight: normal;
+    }
+  }
+}
+
+.contentlist
+{
+  list-style-type: none;
+  margin: 10px 0 50px;
+  padding: 0;
+
+  & li
+  {
+    border-top: 1px solid #{$color_linesgrey};
+    border-bottom: 1px solid #{$color_linesgrey};
+    display: block;
+    padding-top: 8px;
+    padding-bottom: 8px;
+
+    & + li
+    {
+      border-top: 0 none;
+    }
+  }
+
+  & a
+  {
+    display: block;
+    position: relative;
+    text-decoration: none;
+    padding-left: 170px;
+    min-height: 100px;
+    color: #{$color_textgrey};
+
+    & .image
+    {
+      width: 155px;
+      height: 100px;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      overflow: hidden;
+      background: #{$color_webhareblue} url('../../web/img/hare-white.png') 50% 50% no-repeat;
+
+      & > img
+      {
+        transition: transform 0.15s;
+        position: absolute;
+        top: 0;
+        right: -9999px;
+        bottom: 0;
+        left: -9999px;
+        margin: 0 auto;
+      }
+    }
+
+    &:hover .image > img
+    {
+      transform: scale(1.05, 1.05);
+    }
+
+    & .title
+    {
+      display: block;
+    }
+
+    & .filesize
+    {
+      color: #999;
+      font-weight: normal;
+      font-size: 14px;
+    }
+  }
+
+  @media( max-width: #{$mobile_width_max} )
+  {
+    & a
+    {
+      padding-left: 110px;
+
+      & .image
+      {
+        height: 80px;
+        width: 80px;
+        background-size: 80%;
+      }
+    }
+  }
+}
+
+
+/* more btn used in sitesearch */
+#moreresults
+{
+  color: #fff;
+  display: none;
+  margin: 18px 0 60px;
+  padding: 14px;
+  text-align: center;
+  height: 60px;
+  cursor: pointer;
+  border-radius: 2px;
+  font: 300 24px/30px "Barlow", Sans-Serif, Arial;
+  position: relative;
+  background-color: #{$color_webhareblue};
+}
+  html.loadingresults #moreresults .more
+, #moreresults .loading
+{
+  display: none;
+}
+#moreresults .more
+{
+  position: relative;
+}
+#moreresults .more > .fa
+{
+  font-size: 43px;
+  position: absolute;
+  left: 50%;
+  margin-left: -22px;
+  top: 45px;
+  transition: top 0.2s;
+  color: #{$color_webhareblue};
+}
+#moreresults:hover .more > .fa
+{
+  top: 49px;
+}
+html.loadingresults #moreresults .loading
+{
+  display: block;
+}
+#moreresults.active
+{
+  display: block;
+}
+
+
+
+  html.loadingresults #moreresults .more
+, #moreresults .loading
+{
+  display: none;
+}
+#moreresults .more
+{
+  position: relative;
+}
+#moreresults .more > .fa
+{
+  font-size: 43px;
+  position: absolute;
+  left: 50%;
+  margin-left: -22px;
+  top: 45px;
+  transition: top 0.2s;
+}
+#moreresults:hover .more > .fa
+{
+  top: 49px;
+}
+html.loadingresults #moreresults .loading
+{
+  display: block;
+}
+#moreresults.active
+{
+  display: block;
+}
+
+#resultscount
+{
+  margin-bottom: 30px;
+}
+
+  #resultscount .multi
+, #resultscount.single .single
+{
+  display: inline-block;
+}
+  #resultscount .single
+, #resultscount.single .multi
+, #loadingresults
+, html.loadingresults #resultscount
+{
+  display: none;
+}
+html.loadingresults #loadingresults
+{
+  display: block;
+}
+@media (max-width:600px)
+{
+    html.programme #resultscount
+  , html.programme #loadingresults
+  {
+    padding: 20px;
+  }
+  #selectedsearchfilters
+  {
+    padding-top: 0;
+  }
+}
+
+
+
+#headersearchform
+{
+  position: relative;
+  padding-top: 0;
+  font-family: "Barlow", Sans-Serif, Arial;
+
+  @media( max-width: #{$mobile_width_max} )
+  {
+    &
+    {
+      top: -110px;
+    }
+  }
+
+  & input, & button
+  {
+    height: 39px;
+    border: 0 none;
+    border-radius: 0;
+    text-align: left;
+    padding: 5px 15px;
+    line-height: 29px;
+    font-size: 20px;
+    outline: none;
+    -webkit-appearance: none;
+  }
+
+  & input
+  {
+    background-color: #fff;
+    width: 100%;
+    padding-right: 150px;
+    border: 1px solid #7c7c7c;
+  }
+
+  & button
+  {
+    position: absolute;
+    background-color: #{$color_webhareblue};
+    right: 0;
+    top: 0;
+    width: 140px;
+    color: #fff;
+    font-family: inherit;
+    cursor: pointer;
+    transition: opacity 0.15s;
+    font-weight: 300;
+    padding-top: 8px;
+    padding-left: 20px;
+
+    &:hover
+    {
+      opacity: 0.9;
+    }
+
+    & .fa
+    {
+      position: absolute;
+      display: inline-block;
+      top: 10px;
+      right: 10px;
+    }
+  }
+
+  @media(max-width: 1000px)
+  {
+    & input
+    {
+      width: 100%;
+    }
+  }
+
+  @media(max-width: 400px)
+  {
+    & input
+    {
+      padding-right: 50px;
+    }
+
+    & button
+    {
+      width: 40px;
+
+      & > .label
+      {
+        display: none;
+      }
+    }
+  }
+}
+
+#searchresults
+{
+  margin-top: 20px;
+
+  .consilio--highlight
+  {
+    display: inline-block;
+    position: relative;
+    z-index: 0;
+
+    &::before
+    {
+      content: "";
+      bottom: calc((100% - 1em) / 2 - 2px);
+      display: block;
+      font-size: inherit;
+      background-color: #3BA1FA;
+      height: 9px;
+      left: -3px;
+      opacity: .2;
+      position: absolute;
+      right: -3px;
+      z-index: -1;
+    }
+  }
+
+  & .sectionhilight
+  {
+    padding-bottom: 15px;
+
+    & h2 > .count
+    {
+      font-weight: 300;
+      font-family: "Barlow", Sans-Serif, Arial;
+    }
+
+    #resultscount
+    {
+      padding-top: 0;
+    }
+
+    & .more
+    {
+      color: #{$color_webhareblue};
+      display: inline-block;
+      text-decoration: none;
+      position: relative;
+      top: -35px;
+
+      & > .fa
+      {
+        display: inline-block;
+        padding-right: 8px;
+      }
+      &:hover
+      {
+        text-decoration: underline;
+      }
+    }
+  }
+}

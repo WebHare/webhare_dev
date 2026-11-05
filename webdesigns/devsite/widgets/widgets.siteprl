@@ -1,0 +1,143 @@
+<siteprofile xmlns="http://www.webhare.net/xmlns/publisher/siteprofile">
+
+  <!-- Embedded objects -->
+  <widgettype namespace="http://www.webhare.dev/xmlns/widgets/sourcecodeobject"
+              editextension="#editsourcecodeobject"
+              renderobjectname="widgets.whlib#EmbedSourceCode"
+              tid="webdesigns.devsite.backend.widgets.sourcecodeobject"
+              wittycomponent="widgets.witty:sourcecodeobject">
+    <members>
+      <member name="type" type="string" />
+      <member name="code" type="string" />
+    </members>
+  </widgettype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="editsourcecodeobject">
+    <newtab gid="webdesigns.devsite.backend.widgets.sourcecodeobject">
+      <select composition="contentdata" cellname="type" type="pulldown">
+        <option rowkey="harescript" />
+        <option rowkey="witty" />
+        <option rowkey="xml" />
+        <option rowkey="js" />
+        <option rowkey="html" />
+      </select>
+      <codeedit composition="contentdata" cellname="code" width="1pr" height="1pr" minwidth="80x" minheight="15x" />
+    </newtab>
+  </tabsextension>
+
+<!-- Warning block -->
+  <widgettype namespace="http://www.webhare.dev/xmlns/widgets/tip-criticalwarning"
+              editextension="#editpresettip"
+              renderobjectname="widgets.whlib#EmbedTip"
+              tid="webdesigns.devsite.backend.widgets.tip-criticalwarning"
+              tolliumicon="tollium:messageboxes/warning"
+              wittycomponent="widgets.witty:tip">
+    <members>
+      <member name="title" type="string" />
+      <member name="description" type="richdocument" />
+    </members>
+  </widgettype>
+
+  <widgettype namespace="http://www.webhare.dev/xmlns/widgets/tip-warning"
+              editextension="#editpresettip"
+              renderobjectname="widgets.whlib#EmbedTip"
+              tid="webdesigns.devsite.backend.widgets.tip-warning"
+              tolliumicon="tollium:messageboxes/information"
+              wittycomponent="widgets.witty:tip">
+    <members>
+      <member name="title" type="string" />
+      <member name="description" type="richdocument" />
+    </members>
+  </widgettype>
+
+  <widgettype namespace="http://www.webhare.dev/xmlns/widgets/tip-check"
+              editextension="#editpresettip"
+              renderobjectname="widgets.whlib#EmbedTip"
+              tid="webdesigns.devsite.backend.widgets.tip-check"
+              tolliumicon="tollium:messageboxes/confirmation"
+              wittycomponent="widgets.witty:tip">
+    <members>
+      <member name="title" type="string" />
+      <member name="description" type="richdocument" />
+    </members>
+  </widgettype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="editpresettip">
+    <newtab gid="webdesigns.devsite.backend.widgets.tip">
+      <textedit composition="contentdata" cellname="title" width="1pr" required="true" />
+      <richdocument composition="contentdata"
+                    cellname="description"
+                    width="1pr"
+                    height="1pr"
+                    minwidth="600px"
+                    minheight="250px"
+                    errorlabeltid=".description"
+                    required="true"
+                    rtdtype="http://www.webhare.dev/xmlns/rtd/plain" />
+    </newtab>
+  </tabsextension>
+
+<!-- Tip block -->
+  <widgettype namespace="http://www.webhare.dev/xmlns/widgets/tip"
+              editextension="#edittip"
+              renderobjectname="widgets.whlib#EmbedTip"
+              tid="webdesigns.devsite.backend.widgets.tip"
+              tolliumicon="tollium:datatypes/freetext"
+              wittycomponent="widgets.witty:tip">
+    <members>
+      <member name="title" type="string" />
+      <member name="icon" type="string" />
+      <member name="color" type="string" />
+      <member name="description" type="richdocument" />
+    </members>
+  </widgettype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="edittip">
+    <newtab gid="webdesigns.devsite.backend.widgets.tip">
+      <select composition="contentdata" cellname="icon" type="pulldown" rowkeytype="string">
+        <option rowkey="" tid=".icon-none" />
+        <option rowkey="check" />
+        <option rowkey="warning" />
+        <option rowkey="exclamation" />
+        <option rowkey="question" />
+      </select>
+      <select composition="contentdata" cellname="color" type="pulldown">
+        <option rowkey="blue" />
+        <option rowkey="green" />
+        <option rowkey="yellow" />
+        <option rowkey="red" />
+        <option rowkey="grey" />
+      </select>
+      <textedit composition="contentdata" cellname="title" width="1pr" required="true" />
+      <richdocument composition="contentdata"
+                    cellname="description"
+                    width="1pr"
+                    height="1pr"
+                    minwidth="600px"
+                    minheight="250px"
+                    errorlabeltid=".description"
+                    required="true"
+                    rtdtype="http://www.webhare.dev/xmlns/rtd/plain" />
+    </newtab>
+  </tabsextension>
+
+  <!-- Anchor -->
+  <widgettype namespace="http://www.webhare.dev/xmlns/widgets/anchor"
+              editextension="#editanchor"
+              renderobjectname="widgets.whlib#EmbedAnchor"
+              tid="webdesigns.devsite.backend.widgets.anchor"
+              tolliumicon="tollium:actions/link"
+              wittycomponent="widgets.witty:anchor">
+    <members>
+      <member name="anchor" type="string" />
+    </members>
+  </widgettype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="editanchor">
+    <newtab gid="webdesigns.devsite.backend.widgets.anchor">
+      <textedit composition="contentdata" cellname="anchor" width="1pr" errorlabeltid=".anchor" required="true" title="" />
+      <text valuetid=".note" />
+    </newtab>
+  </tabsextension>
+
+</siteprofile>

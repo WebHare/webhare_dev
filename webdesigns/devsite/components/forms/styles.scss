@@ -1,0 +1,153 @@
+@import '~@mod-publisher/js/forms/styles';
+
+@at-root
+{
+  @include wh-form-flex;
+}
+.wh-form__label
+{
+  min-width:150px;
+}
+
+@media (max-width: 505px)
+{
+  /* Order the inputs vertical from their labels */
+  .wh-form__fieldgroup
+  {
+    -ms-flex-direction: column;
+    -webkit-flex-direction: column;
+    flex-direction: column;
+  }
+  /* Give the fields their full width back */
+  .wh-form__fields
+  {
+    width:100%;
+  }
+}
+.wh-form
+{
+  &__error
+  {
+    display: none;
+    position: relative;
+    font-style: italic;
+    color: #ff0000;
+    font-size: 14px;
+    padding: 6px 0 0 20px;
+
+    &:before
+    {
+      content: '\f071';
+      display: inline-block;
+      width: 14px;
+      height: 14px;
+      color: #fff;
+      color: #ff0000;
+      position: absolute;
+      font-family: fontAwesome;
+      line-height: 11px;
+      padding-left: 1px;
+      font-style: normal;
+      text-align: center;
+      font-size: 14px;
+      top: 11px;
+      left: 0;
+    }
+  }
+
+  &__fieldgroup--error .wh-form__error
+  {
+    display: block;
+  }
+
+
+  /* css styled pulldown */
+
+  &__fieldgroup--error .wh-form__pulldown-styled
+  {
+    border-color: #e41e00;
+  }
+
+  &__pulldown-styled
+  {
+    position: relative;
+    display: flex;
+
+    align-items: center;
+    border: 1px solid #999;
+    font-size: 18px;
+    transition: border-color 0.2s;
+
+    overflow: hidden;
+    background-color: #fff;
+    height: 33px;
+    font-size: 14px;
+    line-height: 20px;
+    flex: 1;
+
+    .arrow
+    {
+      font-size: 26px;
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      margin-top: -13px;
+      color: rgb(0,29,96);
+    }
+
+    &:hover
+    {
+      border-color: #333;
+    }
+
+    &:after /* overflow right mask */
+    {
+      display: block;
+      content: "";
+      width: 25px;
+      position: absolute;
+      z-index: 2;/* On top of select */
+      right: 28px;
+      top: 1px;
+      bottom: 1px;
+      pointer-events: none;
+
+      background: -moz-linear-gradient(left, rgba(255,255,255,0) 0%, rgba(255,255,255,1) 100%); /* FF3.6-15 */
+      background: -webkit-linear-gradient(left, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* Chrome10-25,Safari5.1-6 */
+      background: linear-gradient(to right, rgba(255,255,255,0) 0%,rgba(255,255,255,1) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
+      filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#ffffff',GradientType=1 ); /* IE6-9 */
+    }
+
+    select
+    {
+      position: relative;
+      z-index: 1; /* On top of arrow */
+      border: 0 none;
+      background: transparent;
+
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      -o-appearance: none;
+      appearance: none;
+
+      height: 33px;
+      width: 100%;
+      padding: 0 30px 0 10px !important;
+
+      &:disabled
+      {
+        opacity: 0.4;
+
+        & + .arrow
+        {
+          opacity: 0.4;
+        }
+      }
+    }
+
+    select::-ms-expand
+    {
+      display: none; /* hide select arrow in IE */
+    }
+  }
+}

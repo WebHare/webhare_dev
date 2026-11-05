@@ -1,0 +1,10 @@
+<topic xmlns="http://www.webhare.net/xmlns/dev/topic"
+       title="DevTestTopic"
+       shortdescription="this is a test topic"
+       docorder="page1 page02">
+  <section name="first" title="First" />
+  <section name="second" title="Second" />
+  <section name="third" title="Third" />
+  <section name="symbols" title="Other symbols" />
+  <section name="override" title="Topic override test" />
+</topic>

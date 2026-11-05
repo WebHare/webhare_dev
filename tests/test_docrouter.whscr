@@ -1,0 +1,192 @@
+<?wh
+
+LOADLIB "wh::ipc.whlib";
+LOADLIB "wh::internet/urls.whlib";
+LOADLIB "mod::publisher/lib/siteapi.whlib";
+
+LOADLIB "mod::system/lib/configure.whlib";
+LOADLIB "mod::system/lib/testframework.whlib";
+
+LOADLIB "mod::consilio/lib/api.whlib";
+
+LOADLIB "mod::webhare_dev/lib/devsite/router.whlib";
+LOADLIB "mod::webhare_dev/lib/devsite/structure.whlib";
+LOADLIB "mod::webhare_Dev/lib/topicgroups.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/settings.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/fs.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/topics.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/testing.whlib";
+
+OBJECT fs;
+
+ASYNC MACRO TestParsers()
+{
+  fs := NEW DevFileSystem;
+
+  EnsureSourceReindexed([ "mod::devkit/tests/data/lib/bbb.whlib", "mod::devkit/tests/data/lib/ccc.whlib", "mod::devkit/tests/data/lib/aaa.whlib", "mod::devkit/tests/data/lib/ddd.whlib"
+                        , "mod::devkit/tests/data/lib/devtestfile.whlib" //for the 'override' section
+                        , "wh::system.whlib"
+                        ]);
+
+  RECORD topicinfo := GetDevTopic("dev-test", CELL[ fs, publiconly := FALSE ]);
+  TestEq("DevTestTopic", topicinfo.title);
+  TestEq("this is a test topic", topicinfo.shortdescription);
+
+  TestEq("page 1", topicinfo.subpages[0].title);
+  TestEq("page 2", topicinfo.subpages[1].title);
+
+  //TODO: The "mod::dev" public identifiers don't seem to be found by SourceIndex
+  TestEq(TRUE, Length(topicinfo.sections) > 0, "If there are no sections, sourcecode indexing did not start?");
+  TestEq([ "mod::devkit/tests/data/lib/bbb.whlib", "mod::devkit/tests/data/lib/ddd.whlib" ], topicinfo.sections[0].resources);
+  TestEq([ "mod::devkit/tests/data/lib/ccc.whlib" ], topicinfo.sections[1].resources);
+  TestEq([ "mod::devkit/tests/data/lib/aaa.whlib" ], topicinfo.sections[2].resources);
+  TestEq("symbols", topicinfo.sections[3].name);
+  TestEq("override", topicinfo.sections[4].name);
+  TestEq(5, Length(topicinfo.sections), "secret.whlib appeared?");
+
+  RECORD position_bbb := SELECT * FROM topicinfo.sections[0].identifiers WHERE name="position_bbb";
+  TestEq(TRUE, RecordExists(position_bbb));
+
+  RECORD position_ddd := SELECT * FROM topicinfo.sections[0].identifiers WHERE name="position_ddd";
+  TestEq(TRUE, RecordExists(position_ddd));
+
+  TestEq(2, Length(topicinfo.sections[0].identifiers), "more identifiers than expected - secret leaked?");
+
+  TestEq("Third", topicinfo.sections[2].title);
+
+  Testeq(RECORD[], LookupIdentifier("wqpfregtsdfgshfjdgrtjfgnh", CELL[ fs, publiconly := TRUE ]));
+
+  RECORD ARRAY lookup := LookupIdentifier("Abort", CELL[ fs, publiconly := TRUE ]);
+  TestEq(1,Length(lookup));
+  TestEQ("harescript-core/symbol/abort", lookup[0].referencelink, ""); //wehbare dev site getting started manual relies on this property
+}
+
+MACRO TestBaseDocAPI()
+{
+  RECORD ARRAY topics := GetAllTopics(fs);
+
+  TestEq(TRUE, Length(topics) > 1);
+  TestEq([[ name := "forms", title := "Forms" ]], SELECT name, title FROM topics WHERE name="forms");
+  TestEq([[ name := "wrd", resourcepath := "mod::wrd/doc/topics/wrd/" ]], SELECT name, resourcepath FROM topics WHERE name="wrd");
+
+  RECORD topicinfo := GetDevTopic("forms", CELL[ fs ]);
+
+  topicinfo := GetDevTopic("dev-test", CELL[ publiconly := FALSE, fs ]);
+
+  RECORD ARRAY topicgroups := GetAllTopicGroups(fs);
+  TestEq(TRUE, Length(topicgroups)>1);
+}
+
+MACRO TestDevRouter()
+{
+  RECORD devpage;
+
+  devpage := GetDevsitePage(fs, "https://beta.webhare.org/", "");
+  TestEq(TRUE, RecordExists(devpage));
+  TestEq(0, Length(devpage.path));
+  //TODO title & meta description, for all pages
+
+  devpage := GetDevsitePage(fs, "https://beta.webhare.org/", "forms");
+  TestEq(TRUE, RecordExists(devpage));
+  TestEq("topic", devpage.pagetype);
+  TestEq(1, Length(devpage.path));
+  TestEq("Forms", devpage.path[0].title);
+  TestEq("forms", devpage.path[0].sublink);
+  TestEq(TRUE, devpage.pagedata.html != DEFAULT MACRO PTR);
+
+  devpage := GetDevsitePage(fs, "https://beta.webhare.org/", "forms/basicsetup");
+  TestEq(TRUE, RecordExists(devpage));
+
+  TestEq(2, Length(devpage.path));
+  TestEq("Forms", devpage.path[0].title);
+  TestEq("forms", devpage.path[0].sublink);
+  TestEq("Basic setup", devpage.path[1].title);
+  TestEq("forms/basicsetup", devpage.path[1].sublink);
+
+  TestEq(FALSE, RecordExists(GetDevsitePage(fs, "https://beta.webhare.org/", "nosuchtopic")));
+  TestEq(FALSE, RecordExists(GetDevsitePage(fs, "https://beta.webhare.org/", "nosuchpage")));
+
+  //verify parsing of an objtype
+  devpage := GetDevsitePage(fs, "https://beta.webhare.org/", "dev-test/symbol/testobjtype", [ publiconly := FALSE]);
+  TestEq(TRUE, RecordExists(devpage));
+
+  RECORD menu_properties := SELECT * FROM devpage.pagedata.menu.items WHERE ToUppercase(title)="PROPERTIES";
+  TestEq(TRUE, RecordExists(SELECT FROM menu_properties.items WHERE title = "propc"));
+  TestEq(FALSE, RecordExists(SELECT FROM menu_properties.items WHERE title = "propd"), "'propd' should be secret!");
+}
+
+ASYNC MACRO TestDevRouterSearch()
+{
+  RECORD devpage, resultpage;
+  OBJECT catalog := OpenConsilioCatalog(devconstants.catalog_sourcecode);
+
+  OBJECT contentsource := catalog->OpenContentSource(devconstants.contentsource_moduleresources);
+  FOREVERY (STRING groupid FROM [ "mod::publisher/lib/forms/conditions.whlib" ])
+    contentsource->ReindexGroup(groupid, [ rebuild := TRUE, foreground := TRUE ]);
+
+  catalog->Refresh();
+  BroadcastEvent("dev:clearidentifierlists", DEFAULT RECORD);
+
+  devpage := GetDevsitePage(fs, "https://beta.webhare.org/", "search", [ query := "fcand" ]);
+  TestEq(TRUE, RecordExists(devpage));
+
+  //use the router to verify the search result
+  resultpage := GetDevsitePage(fs, "https://beta.webhare.org/", UnpackURL(devpage.redirect).urlpath);
+  TestEq(TRUE, RecordExists(resultpage));
+  //DumpValue(resultpage);
+  TestEq("harescriptsymbol", resultpage.pagetype);
+  TestEq("FCAnd", resultpage.pagedata.title);
+
+  devpage := GetDevsitePage(fs, "https://beta.webhare.org/", "search", [ query := "certainly__does__" || "not__exist" ]);
+  TestEq(TRUE, RecordExists(devpage));
+  TestEq("", devpage.redirect);
+  TestEq("searchresults", devpage.pagetype);
+}
+
+MACRO TestDevSite()
+{
+  IF(NOT ObjectExists(OpenSiteByname("www.webhare.dev"))) {
+    PRINT("FIXME - CREATE webhare.dev\n");
+    RETURN;
+  }
+
+  STRING devroot := ResolveToAbsoluteURL(OpenSiteByname("www.webhare.dev")->webroot,"reference");
+  TestEq(TRUE, testfw->browser->GotoWebPage(devroot));
+
+  STRING formspagelink := SELECT AS STRING node->GetAttribute("href") FROM ToRecordArray(testfw->browser->document->GetElements(".whdoc__topiclink"), "node") WHERE TrimWhitespace(node->textcontent)="Forms";
+  TestEq(TRUE, formspagelink != "");
+  TestEq(TRUE, testfw->browser->GotoWebPage(formspagelink));
+
+  STRING firstdoclink := testfw->browser->document->GetElements(".whdoc__subpagelink")[0]->GetAttribute("href");
+  TestEq(TRUE, firstdoclink != "");
+  TestEq(TRUE, testfw->browser->GotoWebPage(firstdoclink));
+  TestEq(0, Length(testfw->browser->document->GetElements(".whdoc__subpagelink")), "should have gone to deeper page, so no subpagelinks!!");
+
+  TestEq(TRUE, testfw->browser->GotoWebPage(devroot || "/dev-test/page1"));
+  RECORD ARRAY links := SELECT node, href := node->GetAttribute("href"), textcontent := TrimWhitespace(node->textcontent) FROM ToRecordArray(testfw->browser->document->GetElements("a"), "node");
+  TestEqLike(devroot || "*", SELECT AS STRING href FROM links WHERE textcontent = "Absolute link to topic");
+  TestEqLike(devroot || "*", SELECT AS STRING href FROM links WHERE textcontent = "Absolute link to page 2");
+  TestEqLike(devroot || "*", SELECT AS STRING href FROM links WHERE textcontent = "Relative link to page 2");
+  STRING objtypelink := SELECT AS STRING href FROM links WHERE textcontent = "testobjtype";
+  TestEqLike(devroot || "*", objtypelink);
+  TestEqLike(devroot || "*", SELECT AS STRING href FROM links WHERE textcontent = "testobjtype::propc");
+
+  // Links that are not resolved are rendered as empty links
+  //ADDME: Shouldn't these links be removed, keeping only the link text?
+  TestEq("", SELECT AS STRING href FROM links WHERE textcontent = "Absolute link to non-existing topic");
+  TestEq("", SELECT AS STRING href FROM links WHERE textcontent = "Absolute link to non-existing page");
+  TestEq("", SELECT AS STRING href FROM links WHERE textcontent = "Relative link to non-existing page");
+  TestEq("", SELECT AS STRING href FROM links WHERE textcontent = "nonexistingtestobjtype");
+  TestEq("", SELECT AS STRING href FROM links WHERE textcontent = "testobjtype::nonexistingproperty");
+
+  //Test a symbol page
+  TestEq(TRUE, testfw->browser->GotoWebPage(objtypelink));
+}
+
+
+RunTestFramework([ PTR TestParsers
+                 , PTR TestBaseDocAPI
+                 , PTR TestDevRouter
+                 , PTR TestDevRouterSearch
+                 , PTR TestDevSite
+                 ]);

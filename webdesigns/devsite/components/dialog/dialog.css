@@ -1,0 +1,139 @@
+
+/* dialog */
+html.dialog--active
+{
+  overflow: hidden;
+}
+
+.dialog__modal
+{
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  z-index: 100;
+  white-space: nowrap;
+  vertical-align: middle;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-position: 50% 50%;
+  background-size: cover;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.dialog__modal.aftershow
+{
+  opacity: 1;
+}
+.dialog__modal:before
+{
+  display: inline-block;
+  content: '';
+  vertical-align: middle;
+  line-height: 100%;
+  height: 100%;
+  width: 0;
+}
+.dialog__body
+{
+  text-align: left;
+  display: inline-block;
+  white-space: normal;
+  background-color: #fff;
+  padding: 15px;
+  box-shadow: 0 0 6px 0 rgba(0, 0, 0, 0.3);
+  min-width: 200px;
+  max-width: calc(100% - 40px);
+  font-family: inherit;
+  color: inherit;
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  transform: scale(0,0);
+  transition: transform 0.2s;
+}
+.dialog__modal.aftershow .dialog__body
+{
+  transform: scale(1,1);
+}
+@media (max-width: 600px)
+{
+  .dialog__body
+  {
+    max-width: calc(100% - 20px);
+  }
+}
+@media (max-width: 400px)
+{
+  .dialog__body
+  {
+    max-width: 100%;
+    min-width: calc(100% - 30px);
+  }
+}
+
+.dialog__modal .close
+{
+  font-size: 29px;
+  line-height: 29px;
+  padding-top: 10px;
+  display: inline-block;
+  position: absolute;
+  right: 30px;
+  top: 30px;
+  cursor: pointer;
+  transition: transform 0.3s;
+}
+.dialog__modal .close:hover > .fa
+{
+  transform: scale(1.2, 1.2);
+}
+.dialog__modal .dialog__body .close
+{
+  right: 10px;
+  top: 10px;
+}
+.dialog__modal .dialog__body .close > .fa
+{
+  font-size: 36px;
+  margin-left: -4px;
+}
+.dialog__modal .dialog__body .close > .fa + .fa
+{
+  margin-left: 4px;
+}
+
+.dialog__body > .title
+{
+  font-size: 18px;
+  text-transform: uppercase;
+  margin: 0 0 20px;
+  padding-right: 35px;/* space for close btn */
+}
+.dialog__body > .title + .dialog__content
+{
+  padding-top: 15px;
+}
+.dialog__body > .title + .dialog__content
+{
+  padding-top: 0;
+}
+.dialog__content p
+{
+  margin-top: 15px;
+}
+.dialog__body h3
+{
+  margin-top: 0;
+  margin-bottom: 5px;
+}
+
+html.dialog--active body
+{
+  overflow: hidden;
+}

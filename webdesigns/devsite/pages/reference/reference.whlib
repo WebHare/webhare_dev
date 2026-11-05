@@ -1,0 +1,31 @@
+<?wh
+
+LOADLIB "wh::internet/urls.whlib";
+
+LOADLIB "mod::publisher/lib/webdesign.whlib";
+
+LOADLIB "mod::system/lib/webserver.whlib";
+
+LOADLIB "mod::webhare_dev/lib/devsite/router.whlib";
+
+PUBLIC OBJECT FUNCTION ReferenceRouter(OBJECT webdesign)
+{
+  INSERT "reference" INTO webdesign->htmlclasses AT END;
+
+  STRING baseurl := GetDynamicPageParameters().absolutebaseurl;
+  RECORD page := GetDevsitePage(webdesign->GetReferenceFS(), baseurl, GetDynamicPageParameters().subpath);
+  IF (NOT RecordExists(page))
+    AbortWithHTTPError(404);
+
+  RECORD ARRAY pathnav := webdesign->pageconfig.pathnav;
+  INTEGER firstpos := Length(pathnav) + 1;
+  webdesign->pageconfig.pathnav := pathnav CONCAT
+      SELECT title
+           , link := ResolveToAbsoluteUrl(baseurl, sublink)
+           , position := firstpos + #path
+        FROM page.path;
+
+  webdesign->pagetitle := webdesign->pageconfig.pathnav[END-1].title || " | " || webdesign->pagetitle;
+
+  RETURN NEW SimpleWebPage(page.body);
+}

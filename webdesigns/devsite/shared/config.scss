@@ -1,0 +1,32 @@
+$maxcontentwidth: 1140px;
+$contentpadding: 20px;
+$gridgap: 30px;
+
+
+/* OLD: */
+$desktop_width_min: 1001px;
+$tablet_width_max:  1000px;
+$tablet_width_min:  601px;
+$mobile_width_max:  600px;
+
+$color_darkgrey:    #3B3B3B;
+$color_textgrey:    #4A4A4A;
+$color_linesgrey:   #979797;
+$color_greyondark:  #E9E9E9;
+$color_blueondark:  #51C3F6;
+$color_link:        #2486DB;
+$color_webhareblue: #3BA1FA;
+
+@mixin iconfont {
+  display: inline-block;
+  font-family: 'FontAwesome' !important;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+  font-style: normal;
+  font-variant: normal;
+  font-weight: 400;
+  line-height: 1;
+  speak: none;
+  text-transform: none;
+  text-align: center;
+}

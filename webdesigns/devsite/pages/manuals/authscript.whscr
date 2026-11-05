@@ -1,0 +1,32 @@
+<?wh
+
+LOADLIB "wh::datetime.whlib";
+
+LOADLIB "mod::system/lib/database.whlib";
+LOADLIB "mod::system/lib/webserver.whlib";
+
+LOADLIB "mod::publisher/lib/publisher.whlib";
+LOADLIB "mod::publisher/lib/siteapi.whlib";
+
+
+MACRO HandleAccessExpired()
+{
+  OpenPrimary();
+  OBJECT manualsite := OpenSite(LookupPublisherURL(GetRequestURL()).site);
+
+  Redirect(manualsite->webroot || "meta/manualaccessexpired/");
+}
+
+STRING suburl := Tokenize(GetRequestURL(),'?')[0];
+suburl := Substring(suburl, SearchSubstring(suburl,'/private/') + 9);
+
+STRING requestedmanual := Detokenize(ArraySlice(Tokenize(suburl,'/'),0,2),'/');
+STRING manualcookie := GetDecryptedWebCookie(Substitute(requestedmanual,'/','__'));
+IF(manualcookie="")
+  HandleAccessExpired();
+
+RECORD cookiedata := DecodeHSON(manualcookie);
+IF(cookiedata.manual != requestedmanual OR DecodeHSON(manualcookie).validuntil < GetCurrentDatetime())
+  HandleAccessExpired();
+
+//ADDME cache that we let the user through? need to be able to accelerate other cookies than webharelogin then

@@ -1,0 +1,16 @@
+[component 404page]
+
+  [content]
+
+  [if suggestions]
+    <div class="errorpage_suggestions">
+      <h2>[gettid webdesigns.devsite.frontend.errorpage.suggestions]</h2>
+      <ul>
+        [forevery suggestions]
+          <li><a href="[link]">[title]</a></li>
+        [/forevery]
+      </ul>
+    </div>
+  [/if]
+
+[/component]

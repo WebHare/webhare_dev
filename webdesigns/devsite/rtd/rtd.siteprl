@@ -1,0 +1,74 @@
+<siteprofile xmlns="http://www.webhare.net/xmlns/publisher/siteprofile"
+             xmlns:my="http://www.webhare.dev/xmlns/components">
+
+  <rtdtype namespace="http://www.webhare.dev/xmlns/rtd/manualstype" allownewwindowlinks="true">
+    <css path="./rtd.css" />
+    <css path="../widgets/widgets.css" />
+    <blockstyles defaultstyle="NORMAL">
+      <textstyle tag="HEADING1" containertag="h1" textstyles="i u" />
+      <textstyle tag="HEADING2" containertag="h2" textstyles="i u" />
+      <textstyle tag="HEADING3" containertag="h3" textstyles="i u" />
+      <textstyle tag="HEADING3_UNDERLINE" title="Kop 3 onderlijnd" containertag="h3" textstyles="i u" />
+      <textstyle tag="HEADING4" containertag="h4" textstyles="i u" />
+      <textstyle tag="HEADING4_UNDERLINE" title="Kop 4 onderlijnd" containertag="h4" textstyles="i u" />
+      <textstyle tag="INTROTEXT" title="Intro" textstyles="b i u a-href img sup sub strike" />
+      <textstyle tag="ARROWLINK" title="Link met pijl" textstyles="b i u a-href sup sub strike" />
+      <textstyle tag="NORMAL" textstyles="b i u a-href img sup sub strike code" />
+      <textstyle tag="UNORDERED" containertag="ul" textstyles="b i a-href img sup sub strike code" />
+      <textstyle tag="ORDERED" containertag="ol" textstyles="b i a-href img sup sub strike code" />
+      <textstyle tag="LANGUAGE-BASH" title="Sourcecode (bash)" containertag="code" textstyles="" />
+      <textstyle tag="LANGUAGE-XML" title="Sourcecode (XML)" containertag="code" textstyles="" />
+      <textstyle tag="LANGUAGE-JAVASCRIPT" title="Sourcecode (JavaScript)" containertag="code" textstyles="" />
+      <textstyle tag="LANGUAGE-HARESCRIPT" title="Sourcecode (HareScript)" containertag="code" textstyles="" />
+      <textstyle tag="LANGUAGE-HTML" title="Sourcecode (HTML)" containertag="code" textstyles="" />
+      <textstyle tag="LANGUAGE-CSS" title="Sourcecode (css)" containertag="code" textstyles="" />
+      <textstyle tag="LANGUAGE-SCSS" title="Sourcecode (scss)" containertag="code" textstyles="" />
+      <textstyle tag="LANGUAGE-WITTY" title="Sourcecode (witty)" containertag="code" textstyles="" />
+      <tablestyle tag="TABLE" />
+      <tablestyle tag="TABLE_NOWRAP" title="Teksten niet afbreken" />
+    </blockstyles>
+    <widgets>
+      <allowtype type="http://www.webhare.net/xmlns/publisher/embedhtml" />
+      <allowtype type="http://www.webhare.net/xmlns/publisher/embedvideo" />
+      <allowtype type="http://www.webhare.dev/xmlns/widgets/anchor" />
+      <allowtype type="http://www.webhare.dev/xmlns/widgets/tip" />
+      <allowtype type="http://www.webhare.dev/xmlns/widgets/tip-criticalwarning" />
+      <allowtype type="http://www.webhare.dev/xmlns/widgets/tip-warning" />
+      <allowtype type="http://www.webhare.dev/xmlns/widgets/tip-check" />
+      <allowtype type="http://www.webhare.dev/xmlns/widgets/sourcecodeobject" />
+    </widgets>
+    <linkhandlers xmlns="http://www.webhare.net/xmlns/tollium/screens">
+      <my:devlink />
+    </linkhandlers>
+  </rtdtype>
+
+  <rtdtype namespace="http://www.webhare.dev/xmlns/rtd/plain" allownewwindowlinks="true">
+    <css path="./rtd.css" />
+    <blockstyles defaultstyle="NORMAL">
+      <textstyle tag="HEADING2" containertag="h2" textstyles="i u" />
+      <textstyle tag="HEADING3" containertag="h3" textstyles="i u" />
+      <textstyle tag="HEADING4" containertag="h4" textstyles="i u" />
+      <textstyle tag="NORMAL" textstyles="b i u a-href img sup sub strike" />
+      <textstyle tag="UNORDERED" containertag="ul" textstyles="b i a-href img sup sub strike" />
+      <textstyle tag="ORDERED" containertag="ol" textstyles="b i a-href img sup sub strike" />
+    </blockstyles>
+  </rtdtype>
+
+  <rtdtype namespace="http://www.webhare.dev/xmlns/rtd/cta" allownewwindowlinks="true">
+    <css path="./rtd.css" />
+    <css path="../widgets/widgets.css" />
+    <blockstyles defaultstyle="NORMAL">
+      <textstyle tag="HEADING2" containertag="h2" textstyles="i u" />
+      <textstyle tag="HEADING3" containertag="h3" textstyles="i u" />
+      <textstyle tag="HEADING4" containertag="h4" textstyles="i u" />
+      <textstyle tag="ARROWLINK" title="Link met pijl" textstyles="b i u a-href sup sub strike" />
+      <textstyle tag="NORMAL" textstyles="b i u a-href img sup sub strike" />
+      <textstyle tag="UNORDERED" containertag="ul" textstyles="b i a-href img sup sub strike" />
+      <textstyle tag="ORDERED" containertag="ol" textstyles="b i a-href img sup sub strike" />
+    </blockstyles>
+    <widgets>
+      <allowtype type="http://www.webhare.dev/xmlns/widgets/twocol" />
+    </widgets>
+  </rtdtype>
+
+</siteprofile>

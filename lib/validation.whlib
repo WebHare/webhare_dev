@@ -1,0 +1,236 @@
+<?wh
+
+/** @topic dev-test/symbols
+*/
+
+LOADLIB "mod::system/lib/database.whlib";
+
+LOADLIB "mod::devkit/lib/sourcecodeindex/fs.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/harescript.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/moduledefdocparser.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/processing.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/sourcefiles.whlib";
+
+
+/** Additional checks for source files
+    @param resourcename Name of the resource to check
+    @param options Options
+    @cell(string array) options.indexmodules Modules to index
+    @cell(boolean) options.onlypublicsymbols Validate only public symbols
+    @cell(boolean) options.fulldocumentation Require all parameters/cells/returns to have a description
+    @cell(blob) options.overridecontent Override the content of the resource
+    @return Validation result
+    @cell(record array) return.errors Errors
+    @cell(string) return.errors.message Error message
+    @cell(integer) return.errors.line Line number
+    @cell(integer) return.errors.col Column number
+    @cell(record array) return.warnings Warnings
+    @cell(string) return.warnings.message Warning message
+    @cell(integer) return.warnings.line Line number
+    @cell(integer) return.warnings.col Column number
+*/
+PUBLIC RECORD FUNCTION ValidateSourceFileDocumentation(STRING resourcename, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  IF (NOT ObjectExists(GetPrimaryWebhareTransactionObject()))
+    OpenPrimary();
+
+  options := ValidateOptions(
+      [ indexmodules :=       GetIndexModules(TRUE)
+      , onlypublicsymbols :=  FALSE
+      , fulldocumentation :=  TRUE
+      , overridedata :=       DEFAULT BLOB
+      ], options,
+      [ optional :=           [ "overridedata" ]
+      ]);
+
+  RECORD result :=
+      [ errors :=   RECORD[]
+      , warnings := RECORD[]
+      ];
+
+  SWITCH (GetResourceType(resourcename))
+  {
+    CASE "harescript"
+    {
+      OBJECT fs := NEW DevFileSystem;
+      OBJECT source := NEW SourceIndex(options.indexmodules, fs, CELL[ options.fulldocumentation ]);
+      IF (CellExists(options, "overridedata"))
+      {
+        IF (LENGTH(options.overridedata) = 0)
+          RETURN result;
+        source->OverrideLibrary(resourcename, options.overridedata);
+      }
+
+      RECORD sourcefile := source->GetSourceFile(resourcename);
+
+      RECORD commentparseoptions := CELL
+          [ options.fulldocumentation
+          ];
+
+      RECORD doc := sourcefile.doc;
+      RECORD defaulttopic := doc.parsedcomment.topic;
+
+      RECORD ARRAY allitems;
+      INSERT CELL[ symbol := DEFAULT RECORD, doc.parsedcomment, doc.docpublic, defaulttopic, objtype := DEFAULT RECORD ] INTO allitems AT END;
+
+      FOREVERY (RECORD rec FROM doc.functions CONCAT doc.variables)
+        INSERT CELL[ symbol := rec, rec.parsedcomment, rec.docpublic, defaulttopic, objtype := DEFAULT RECORD ] INTO allitems AT END;
+
+      FOREVERY (RECORD objtype FROM doc.objecttypes)
+      {
+        INSERT CELL[ symbol := objtype, objtype.parsedcomment, objtype.docpublic, defaulttopic, objtype := DEFAULT RECORD ] INTO allitems AT END;
+
+        IF (options.onlypublicsymbols AND NOT objtype.docpublic)
+          CONTINUE;
+
+        FOREVERY (RECORD rec FROM objtype.members CONCAT objtype.methods CONCAT objtype.properties)
+          INSERT CELL[ symbol := rec, rec.parsedcomment, rec.docpublic, defaulttopic := objtype.parsedcomment.topic ?? defaulttopic, objtype ] INTO allitems AT END;
+      }
+
+      RECORD ARRAY reexports := source->GetSymbolsExportedByLibs(resourcename);
+
+      FOREVERY (RECORD rec FROM allitems)
+      {
+        IF (options.onlypublicsymbols AND NOT rec.docpublic)
+          CONTINUE;
+
+        RECORD ARRAY exportlibs := RecordExists(rec.symbol) AND rec.symbol.symboltype IN [ "variable", "function", "objecttype" ]
+            ? SELECT * FROM reexports WHERE ToUppercase(name) = ToUppercase(rec.symbol.name) AND reexports.doc.docpublic
+            : DEFAULT RECORD ARRAY;
+
+        rec.parsedcomment := CheckHarescriptSymbolParsedComment(resourcename, rec.symbol, rec.parsedcomment, CELL[ options.fulldocumentation, source ]);
+        rec.parsedcomment.errors := SELECT resourcename := resourcename, ...errors FROM rec.parsedcomment.errors;
+        rec.parsedcomment.warnings := SELECT resourcename := resourcename, ...warnings FROM rec.parsedcomment.warnings;
+
+        IF (RecordExists(rec.symbol))
+        {
+          rec.parsedcomment := ExpandSymbolCellDefs(fs, resourcename, CELL[ rec.symbol.name, rec.symbol.symboltype, definition := rec.symbol ], rec.parsedcomment, source, CELL[ options.fulldocumentation ]);
+          rec.parsedcomment.errors := SELECT resourcename := resourcename, ...errors FROM rec.parsedcomment.errors;
+          rec.parsedcomment.warnings := SELECT resourcename := resourcename, ...warnings FROM rec.parsedcomment.warnings;
+
+          IF (rec.docpublic)
+          {
+            IF (rec.parsedcomment.isdefault)
+            {
+              //STRING name := `${RecordExists(rec.objtype) ? rec.objtype.name || "::" : ""}${rec.symbol.name}`;
+              //INSERT CELL[ message := `Public symbol '${name}' not documented`, resourcename, rec.symbol.line, rec.symbol.col ] INTO rec.parsedcomment.warnings AT 0;
+            }
+            ELSE IF (rec.symbol.symboltype IN [ "variable", "function", "objecttype" ] AND NOT RecordExists(rec.parsedcomment.topic ?? rec.defaulttopic))
+            {
+              STRING name := `${RecordExists(rec.objtype) ? rec.objtype.name || "::" : ""}${rec.symbol.name}`;
+
+              STRING ARRAY suggestedtopics :=
+                  SELECT AS STRING ARRAY DISTINCT `${exportlibs.doc.parsedcomment.topic.name}/${exportlibs.doc.parsedcomment.topic.section} (export by ${exportlibs.resourcename})`
+                    FROM exportlibs
+                   WHERE RecordExists(exportlibs.doc.parsedcomment.topic);
+
+              IF (LENGTH(suggestedtopics) != 0)
+                INSERT CELL[ message := `Public symbol '${name}' has no topic, suggested: ${Detokenize(suggestedtopics, ", ")}`, resourcename, rec.symbol.line, rec.symbol.col ] INTO rec.parsedcomment.warnings AT 0;
+              ELSE
+                INSERT CELL[ message := `Public symbol '${name}' has no topic`, resourcename, rec.symbol.line, rec.symbol.col ] INTO rec.parsedcomment.warnings AT 0;
+            }
+            IF (rec.symbol.symboltype IN [ "variable", "function", "objecttype" ] AND rec.docpublic AND NOT sourcefile.ispublic AND NOT RecordExists(rec.symbol.parsedcomment.canonicalloadlib))
+            {
+              IF (RecordExists(exportlibs))
+              {
+                STRING ARRAY suggested := SELECT AS STRING ARRAY COLUMN resourcename FROM exportlibs;
+                INSERT CELL[ message := `Public symbol '${rec.symbol.name}' doesn't have a canonical loadlib (suggested: '${Detokenize(suggested, ", ")})`, resourcename, rec.symbol.line, rec.symbol.col ] INTO result.warnings AT END;
+              }
+            }
+          }
+          ELSE // NOT rec.docpublic
+          {
+            //IF (RecordExists(exportlibs) AND rec.symbol.name NOT LIKE "__*" AND NOT RecordExists(rec.symbol.parsedcomment.markedprivate))
+            //  INSERT CELL[ message := `Public symbol '${rec.symbol.name}' (exported from '${exportlibs[0].resourcename}') not documented`, resourcename, rec.symbol.line, rec.symbol.col ] INTO result.warnings AT END;
+          }
+
+          IF (rec.symbol.symboltype = "variable" AND rec.symbol.type = "SCHEMA")
+          {
+            // Enrich with database schema documentation
+            rec := EnrichSchemaDefinitionWithTables(fs, rec.symbol);
+
+            FOREVERY (RECORD tbl FROM rec.structure.tables)
+            {
+              // surrogate symbol for the table
+              RECORD tblsymbol :=
+                  [ name :=         `${rec.name}.${tbl.name}`
+                  , symboltype :=   "variable"
+                  , definition :=   [ symboltype := "variable"
+                                    , type := "TABLE"
+                                    , objectname := ""
+                                    ]
+                  ];
+
+              //IF (rec.docpublic AND NOT RecordExists(tbl.comment) AND NOT RecordExists(tbl.parsedcomment.markedprivate))
+              //  INSERT CELL[ message := `Public symbol '${rec.name}.${tbl.name}' not documented`, resourcename, tbl.line, tbl.col ] INTO result.warnings AT END;
+
+              {
+                STRING commentresourcename := CellExists(tbl.parsedcomment, "__resourcename") ? tbl.parsedcomment.__resourcename : resourcename;
+                RECORD parsedcomment := CheckHarescriptSymbolParsedComment(commentresourcename, tblsymbol, tbl.parsedcomment, CELL[ options.fulldocumentation, source ]);
+
+                parsedcomment := ExpandSymbolCellDefs(fs, commentresourcename, tblsymbol, parsedcomment, source, CELL[ options.fulldocumentation ]);
+
+                parsedcomment.errors := SELECT resourcename := commentresourcename, ...errors FROM parsedcomment.errors;
+                parsedcomment.warnings := SELECT resourcename := commentresourcename, ...warnings FROM parsedcomment.warnings;
+
+                result.errors := result.errors CONCAT parsedcomment.errors;
+                result.warnings := result.warnings CONCAT parsedcomment.warnings;
+              }
+
+              FOREVERY (RECORD col FROM tbl.columns)
+              {
+                IF (CellExists(col, "declinfo")) // found in table definition
+                {
+                  IF (col.declinfo.binary AND NOT col.binary)
+                    INSERT CELL[ message := `Column '${rec.name}.${tbl.name}.${col.name}' must be marked as binary`, resourcename, col.line, col.col ] INTO result.errors AT END;
+                  IF (col.declinfo.foreignkey AND col.nullexpr = "")
+                    INSERT CELL[ message := `Foreign key column '${rec.name}.${tbl.name}.${col.name}' must have null translation`, resourcename, col.line, col.col ] INTO result.errors AT END;
+                  ELSE IF (col.iskey AND col.declinfo.primarykey AND col.nullexpr = "")
+                    INSERT CELL[ message := `Primary key column '${rec.name}.${tbl.name}.${col.name}' must have null translation`, resourcename, col.line, col.col ] INTO result.errors AT END;
+                  ELSE IF (col.iskey AND NOT col.declinfo.primarykey)
+                    INSERT CELL[ message := `Column '${rec.name}.${tbl.name}.${col.name}' incorrectly marked as primary key`, resourcename, col.line, col.col ] INTO result.errors AT END;
+                  ELSE IF (col.nullexpr != "" AND NOT col.declinfo.primarykey AND NOT col.declinfo.foreignkey)
+                    INSERT CELL[ message := `Non-key column '${rec.name}.${tbl.name}.${col.name}' cannot have null translation`, resourcename, col.line, col.col ] INTO result.errors AT END;
+                  ELSE IF (NOT col.iskey AND col.declinfo.primarykey AND col.name = col.dbasename) // ignore for renamed columns
+                    INSERT CELL[ message := `Primary key column '${rec.name}.${tbl.name}.${col.name}' not marked as primary key, add a KEY '${EncodeValue(col.name)}' to the table definition`, resourcename, col.line, col.col ] INTO result.errors AT END;
+                }
+
+                //IF (rec.docpublic AND RecordExists(tbl.comment) AND NOT RecordExists(col.comment) AND NOT RecordExists(tbl.parsedcomment.markedprivate) AND NOT RecordExists(col.parsedcomment.markedprivate))
+                //  INSERT CELL[ message := `Public symbol '${rec.name}.${tbl.name}.${col.name}' not documented`, resourcename, col.line, col.col ] INTO result.warnings AT END;
+
+                // surrogate symbol for the column
+                RECORD colsymbol :=
+                    [ name :=         `${rec.name}.${tbl.name}.${col.name}`
+                    , symboltype :=   "variable"
+                    , definition :=   CELL[ symboltype := "variable"
+                                          , col.type
+                                          , objectname := ""
+                                          ]
+                    ];
+
+                {
+                  STRING commentresourcename := CellExists(col.parsedcomment, "__resourcename") ? col.parsedcomment.__resourcename : resourcename;
+                  RECORD parsedcomment := CheckHarescriptSymbolParsedComment(commentresourcename, colsymbol, col.parsedcomment, CELL[ options.fulldocumentation, source ]);
+
+                  parsedcomment := ExpandSymbolCellDefs(fs, commentresourcename, colsymbol, parsedcomment, source, CELL[ options.fulldocumentation ]);
+
+                  parsedcomment.errors := SELECT resourcename := commentresourcename, ...errors FROM parsedcomment.errors;
+                  parsedcomment.warnings := SELECT resourcename := commentresourcename, ...warnings FROM parsedcomment.warnings;
+
+                  result.errors := result.errors CONCAT parsedcomment.errors;
+                  result.warnings := result.warnings CONCAT parsedcomment.warnings;
+                }
+              }
+            }
+          }
+
+        }
+
+        result.errors := result.errors CONCAT SELECT * FROM rec.parsedcomment.errors ORDER BY line, col;
+        result.warnings := result.warnings CONCAT SELECT * FROM rec.parsedcomment.warnings ORDER BY line, col;
+      }
+    }
+  }
+
+  RETURN result;
+}

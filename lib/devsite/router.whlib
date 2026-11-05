@@ -1,0 +1,916 @@
+<?wh
+
+LOADLIB "wh::files.whlib";
+LOADLIB "wh::witty.whlib";
+LOADLIB "wh::filetypes/markdown.whlib";
+LOADLIB "wh::internet/urls.whlib";
+
+LOADLIB "mod::system/lib/resources.whlib";
+LOADLIB "mod::system/lib/webserver.whlib";
+LOADLIB "mod::system/lib/internal/webhareconstants.whlib";
+
+LOADLIB "mod::webhare_dev/lib/devsite/parsers.whlib";
+LOADLIB "mod::webhare_dev/lib/devsite/structure.whlib";
+LOADLIB "mod::webhare_dev/lib/devsite/support.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/comments.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/harescript.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/moduledefdocparser.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/processing.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/sourcefiles.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/topics.whlib";
+
+LOADLIB "mod::webhare_Dev/lib/topicgroups.whlib";
+
+RECORD ARRAY FUNCTION ReOrderCells(RECORD ARRAY cells)
+{
+  RETURN SELECT * FROM cells ORDER BY ToUppercase(name);
+}
+
+RECORD ARRAY FUNCTION ProcessObjectTypes(OBJECT source, RECORD ARRAY objecttypes, STRING basesymbolreference)
+{
+  RECORD ARRAY retval;
+  FOREVERY (RECORD rec FROM objecttypes)
+  {
+    TRY
+    {
+      RECORD def := source->LookupSymbolByRelativeRef(basesymbolreference, rec.objtype);
+      IF (RecordExists(def) AND RecordExists(def.topic))
+      {
+        INSERT
+            [ name :=       def.name
+            , sublink :=    `${def.topic.name}/symbol/${ToLowercase(def.name)}`
+            ] INTO retval AT END;
+      }
+    }
+    CATCH;
+  }
+
+  RETURN retval;
+}
+
+RECORD FUNCTION RenderWebhareSymbolPage(RECORD pagedata, RECORD symbol, STRING subtoken, STRING subsubtoken, RECORD options)
+{
+  options := ValidateOptions([ publiconly := TRUE, fs := DEFAULT OBJECT ], options, [ required := [ "fs" ]]);
+  OBJECT source := NEW SourceIndex(GetIndexModules(options.publiconly, CELL[ options.fs ]), options.fs);
+
+  RECORD subsymbol;
+  IF (symbol.symboltype = "objecttype")
+  {
+    symbol := EnrichObjecttypeDefinition(symbol, source);
+
+    IF (subtoken != "")
+      subsymbol :=
+          SELECT resourcename :=    symbol.resourcename
+               , ...subsymbols
+            FROM symbol.definition.members CONCAT symbol.definition.properties CONCAT symbol.definition.methods AS subsymbols
+           WHERE ToUppercase(name) = ToUppercase(subtoken);
+  }
+  ELSE IF (symbol.symboltype = "variable" AND symbol.definition.type = "SCHEMA")
+  {
+    IF (RecordExists(symbol.definition.parsedcomment.schemadef))
+      symbol := EnrichSchemaDefinitionWithTables(options.fs, symbol);
+
+    RECORD tbl := SELECT * FROM symbol.definition.structure.tables WHERE ToUppercase(name) = ToUppercase(subtoken);
+    IF (RecordExists(tbl))
+    {
+      subsymbol := CELL
+          [ symbol.resourcename
+          , tbl.name
+          , tbl.comment
+          , symboltype :=   "variable"
+          , definition := CELL
+                [ tbl.parsedcomment
+                , symboltype :=   "variable"
+                , isconstant :=   FALSE
+                , type :=         "TABLE"
+                , structure :=    CELL[ tbl.columns
+                                      , tbl.viewexpr
+                                      ]
+                ]
+          , parentschema :=   symbol.name
+          ];
+    }
+  }
+
+  RECORD subsubsymbol;
+  IF (RecordExists(subsymbol) AND subsymbol.symboltype = "variable" AND subsymbol.definition.type = "TABLE" AND subsubtoken != "")
+  {
+    RECORD col := SELECT * FROM subsymbol.definition.structure.columns WHERE ToUppercase(name) = ToUppercase(subsubtoken);
+    IF (RecordExists(col))
+    {
+      subsubsymbol := CELL
+          [ symbol.resourcename
+          , col.name
+          , col.comment
+          , symboltype :=   "variable"
+          , definition := CELL
+                [ col.parsedcomment
+                , symbol.symboltype
+                , isconstant :=     FALSE
+                , col.type
+                ]
+          ];
+    }
+  }
+
+  STRING separator := symbol.symboltype = "objecttype" ? "::" : ".";
+
+  STRING basesymbolreference := `${symbol.resourcename}#${symbol.name}${subtoken = "" ? "" : `${separator}${subtoken}`}`;
+
+  // 'subsymbol' is a symbol within the 'symbol' scope, e.g. a member within an objecttype
+  RECORD refsymbol := subsubsymbol ?? subsymbol ?? symbol;
+  RECORD parsed := refsymbol.definition.parsedcomment;
+
+  parsed := CheckHarescriptSymbolParsedComment(refsymbol.resourcename, refsymbol.definition, parsed);
+  parsed := ExpandSymbolCellDefs(options.fs, symbol.resourcename, refsymbol, parsed, source);
+
+  RECORD refsymbol_markdownoptions := CELL[ ...options, source, symbol := refsymbol ];
+
+  STRING canonicalloadlib := symbol.resourcename;
+  IF (RecordExists(parsed.canonicalloadlib))
+    canonicalloadlib := parsed.canonicalloadlib.resourcename;
+
+  RECORD symboldata := CELL
+      [ title :=       (RecordExists(subsymbol) ? symbol.name || separator : "") || refsymbol.name
+      , short :=       RenderMarkdownWithRTDClasses(parsed.short, pagedata, refsymbol_markdownoptions)
+      , long :=        RenderMarkdownWithRTDClasses(parsed.long, pagedata, refsymbol_markdownoptions)
+      , menu :=        DEFAULT RECORD
+      , param :=       (SELECT name
+                             , description :=   RenderMarkdownWithRTDClasses(description, pagedata, refsymbol_markdownoptions)
+                             , variabletype :=  ToUppercase(variabletype)
+                             , objecttypes :=   ProcessObjectTypes(source, objecttypes, basesymbolreference)
+                             , paramcell := ReOrderCells
+                                   (SELECT name := Substring(name, Length(params.name) + 1) // Strip param name + "."
+                                         , description :=   RenderMarkdownWithRTDClasses(description, pagedata, refsymbol_markdownoptions)
+                                         , variabletype := ToUppercase(variabletype)
+                                         , objecttypes :=   ProcessObjectTypes(source, objecttypes, basesymbolreference)
+                                      FROM parsed.cells
+                                     WHERE cells.name LIKE params.name || ".*")
+                          FROM parsed.params)
+      , returnvalue := RecordExists(parsed.returnvalue)
+                           ? CELL[ parsed.returnvalue.name
+                                 , description :=     RenderMarkdownWithRTDClasses(parsed.returnvalue.description, pagedata, refsymbol_markdownoptions)
+                                 , variabletype :=    ToUppercase(parsed.returnvalue.variabletype)
+                                 , objecttypes :=     ProcessObjectTypes(source, parsed.returnvalue.objecttypes, basesymbolreference)
+                                 , returnvaluecell := ReOrderCells
+                                       (SELECT name := Substring(name, 7) // Strip "return."
+                                             , description :=   RenderMarkdownWithRTDClasses(description, pagedata, refsymbol_markdownoptions)
+                                             , variabletype :=  ToUppercase(variabletype)
+                                             , objecttypes :=   ProcessObjectTypes(source, objecttypes, basesymbolreference)
+                                          FROM parsed.cells
+                                         WHERE cells.name LIKE "return.*")
+                                 ]
+                           : DEFAULT RECORD
+      , rootcell :=    refsymbol.symboltype IN [ "variable", "objecttype", "member", "property" ]
+                           ? ReOrderCells(
+                                  SELECT name
+                                       , description :=   RenderMarkdownWithRTDClasses(description, pagedata, refsymbol_markdownoptions)
+                                       , objecttypes :=   ProcessObjectTypes(source, objecttypes, basesymbolreference)
+                                    FROM (RecordExists(parsed.variabletype) ? RECORD[ parsed.variabletype ] : RECORD[]))
+                           : DEFAULT RECORD ARRAY
+      , examples :=    (SELECT AS STRING ARRAY RenderMarkdownWithRTDClasses(examples, pagedata, refsymbol_markdownoptions)
+                          FROM parsed.examples)
+      , usage :=       (canonicalloadlib IN VAR whconstant_harescript_autoloaded_libraries
+                          ? `// Core function, no LOADLIB necessary\n\n`
+                          : `LOADLIB "${EncodeHTML(canonicalloadlib)}";\n\n`) || GetSymbolTitle(refsymbol)
+      , variabletype := refsymbol.symboltype IN [ "variable", "member" ] ? refsymbol.definition.type : ""
+      , overview := DEFAULT RECORD
+      ];
+
+  // Insert the path element for the 'main' symbol, which is used to calculate objecttype member urls
+  INSERT CELL[ title := symbol.name, sublink := pagedata.path[END-1].sublink || "/symbol/" || EncodeURL(ToLowercase(symbol.name)) ]
+         INTO pagedata.path AT END;
+
+  IF (symbol.symboltype = "objecttype")
+  {
+    //TODO: Update sublink if the member is inherited from another objecttype
+    symboldata.menu :=
+        [ items := RECORD[]
+        , type := "refnav__obj"
+        ];
+
+    RECORD ARRAY constructors :=
+        (SELECT TEMPORARY sublink := RecordExists(ancestor) AND ancestor.topic.name != ""
+                                         ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                         : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+              , title :=         name
+              , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+              , url :=           pagedata.referenceroot || sublink
+           FROM symbol.definition.methods
+          WHERE name = "NEW"
+            AND definition.docpublic);
+    IF (RecordExists(constructors))
+      INSERT [ title := "Constructor"
+             , items := constructors
+             ] INTO symboldata.menu.items AT END;
+
+    RECORD ARRAY members :=
+        (SELECT TEMPORARY sublink := RecordExists(ancestor) AND RecordExists(ancestor.topic)
+                                         ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                         : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+              , title :=         name
+              , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+              , url :=           pagedata.referenceroot || sublink
+           FROM symbol.definition.members
+          WHERE definition.docpublic
+          ORDER BY ToUppercase(name));
+    IF (RecordExists(members))
+      INSERT [ title := "Variables"
+             , items := members
+             ] INTO symboldata.menu.items AT END;
+
+    RECORD ARRAY properties :=
+        (SELECT TEMPORARY sublink := RecordExists(ancestor) AND RecordExists(ancestor.topic)
+                                         ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                         : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+              , title :=         name
+              , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+              , url :=           pagedata.referenceroot || sublink
+           FROM symbol.definition.properties
+          WHERE definition.docpublic
+          ORDER BY ToUppercase(name));
+    IF (RecordExists(properties))
+      INSERT [ title := "Properties"
+             , items := properties
+             ] INTO symboldata.menu.items AT END;
+
+    RECORD ARRAY methods :=
+        (SELECT TEMPORARY sublink := RecordExists(ancestor) AND RecordExists(ancestor.topic)
+                                         ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                         : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+              , title :=         name
+              , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+              , url :=           pagedata.referenceroot || sublink
+           FROM symbol.definition.methods
+          WHERE name != "NEW" AND definition.docpublic
+          ORDER BY ToUppercase(name));
+    IF (RecordExists(methods))
+      INSERT [ title := "Functions"
+             , items := methods
+             ] INTO symboldata.menu.items AT END;
+
+    IF (NOT RecordExists(subsymbol))
+    {
+      symboldata.overview :=
+          [ title :=       symbol.name
+          , members :=     (SELECT title :=         GetSymbolTitle(members)
+                                 , name
+                                 , inherited :=     RecordExists(ancestor) ? ancestor.name : ""
+                                 , shortdescription := RenderMarkdownWithRTDClasses(definition.parsedcomment.short, pagedata, refsymbol_markdownoptions)
+                                 , sublink :=       RecordExists(ancestor) AND RecordExists(ancestor.topic)
+                                                        ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                                        : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+                                 , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+                                 , symboltype :=    "member"
+                                 , data :=          members
+                              FROM symbol.definition.members
+                             WHERE definition.docpublic
+                             ORDER BY ToUppercase(name))
+          , properties :=  (SELECT title :=         GetSymbolTitle(properties)
+                                 , name
+                                 , inherited :=     RecordExists(ancestor) ? ancestor.name : ""
+                                 , shortdescription := RenderMarkdownWithRTDClasses(definition.parsedcomment.short, pagedata, refsymbol_markdownoptions)
+                                 , sublink :=       RecordExists(ancestor) AND RecordExists(ancestor.topic)
+                                                        ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                                        : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+                                 , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+                                 , symboltype :=    "property"
+                                 , data :=          properties
+                              FROM symbol.definition.properties
+                             WHERE definition.docpublic
+                             ORDER BY ToUppercase(name))
+          , constructor := (SELECT title :=         GetSymbolTitle(methods)
+                                 , name
+                                 , inherited :=     RecordExists(ancestor) ? ancestor.name : ""
+                                 , shortdescription := RenderMarkdownWithRTDClasses(definition.parsedcomment.short, pagedata, refsymbol_markdownoptions)
+                                 , sublink :=       RecordExists(ancestor) AND RecordExists(ancestor.topic)
+                                                        ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                                        : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+                                 , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+                                 , symboltype :=    "method"
+                                 , data :=          methods
+                              FROM symbol.definition.methods
+                             WHERE name = "NEW" AND definition.docpublic)
+          , methods :=     (SELECT title :=         GetSymbolTitle(methods)
+                                 , name
+                                 , inherited :=     RecordExists(ancestor) ? ancestor.name : ""
+                                 , shortdescription := RenderMarkdownWithRTDClasses(definition.parsedcomment.short, pagedata, refsymbol_markdownoptions)
+                                 , sublink :=       RecordExists(ancestor) AND RecordExists(ancestor.topic)
+                                                        ? `${ancestor.topic.name}/symbol/${ToLowercase(ancestor.name)}/${EncodeURL(ToLowercase(name))}`
+                                                        : pagedata.path[END-1].sublink || "/" || EncodeURL(ToLowercase(name))
+                                 , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+                                 , symboltype :=    "method"
+                                 , data :=          methods
+                              FROM symbol.definition.methods
+                             WHERE name != "NEW" AND definition.docpublic
+                             ORDER BY ToUppercase(name))
+          , tables :=      RECORD[]
+          , columns :=     RECORD[]
+          ];
+    }
+  }
+
+  RECORD tblsymbol;
+  IF (symbol.symboltype = "variable" AND symbol.definition.type IN [ "TABLE", "SCHEMA" ])
+  {
+    tblsymbol := symbol.definition.type = "SCHEMA" ? subsymbol : symbol;
+    IF (RecordExists(tblsymbol))
+    {
+      symboldata.menu :=
+          [ items := RECORD[]
+          , type := "refnav__obj"
+          ];
+
+    RECORD ARRAY columns :=
+        (SELECT TEMPORARY sublink := symbol.definition.type = "SCHEMA"
+                                     ? pagedata.path[END-1].sublink || "/" || EncodeValue(subsymbol.name) || "/" || EncodeValue(name)
+                                     : pagedata.path[END-1].sublink || "/" || EncodeValue(name)
+              , title :=         name
+              , isselected :=    symbol.definition.type = "SCHEMA"
+                                     ? ToUppercase(subsubtoken) = ToUppercase(name)
+                                     : ToUppercase(subtoken) = ToUppercase(name)
+              , url :=           pagedata.referenceroot || sublink
+           FROM tblsymbol.definition.structure.columns
+          ORDER BY ToUppercase(name));
+
+    IF (RecordExists(columns))
+      INSERT [ title := symbol.definition.type = "SCHEMA"
+                  ? `Columns of '${symbol.name}.${tblsymbol.name}'`
+                  : `Columns of '${tblsymbol.name}'`
+             , items := columns
+             ] INTO symboldata.menu.items AT END;
+    }
+  }
+  IF (symbol.symboltype = "variable" AND symbol.definition.type = "SCHEMA")
+  {
+    symboldata.menu := symboldata.menu ??
+        [ items := RECORD[]
+        , type := "refnav__obj"
+        ];
+
+    RECORD ARRAY tables :=
+        (SELECT title :=         name
+              , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+              , url :=           pagedata.referenceroot || pagedata.path[END-1].sublink || "/" || EncodeValue(name)
+           FROM symbol.definition.structure.tables
+          ORDER BY ToUppercase(name));
+
+    IF (RecordExists(tables))
+      INSERT [ title := "Tables"
+             , items := tables
+             ] INTO symboldata.menu.items AT END;
+  }
+
+  IF (refsymbol.symboltype = "variable" AND refsymbol.definition.type = "SCHEMA")
+  {
+    symboldata.overview :=
+        [ title :=        refsymbol.name
+        , constructor :=  RECORD[]
+        , methods :=      RECORD[]
+        , properties :=   RECORD[]
+        , members :=      RECORD[]
+        , columns :=      RECORD[]
+
+        , tables :=       (SELECT title :=         GetSymbolTitle(CELL[ symboltype := "table", name, definition := CELL[] ])
+                                , name
+                                , inherited :=     FALSE
+                                , shortdescription := RenderMarkdownWithRTDClasses(parsedcomment.short, pagedata, refsymbol_markdownoptions)
+                                , sublink :=       pagedata.path[END-1].sublink || "/" || EncodeValue(name)
+                                , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+                                , symboltype :=    "table"
+                                , data :=          tables
+                             FROM refsymbol.definition.structure.tables
+                            ORDER BY ToUppercase(name))
+        ];
+  }
+  ELSE IF (refsymbol.symboltype = "variable" AND refsymbol.definition.type = "TABLE" AND RecordExists(tblsymbol))
+  {
+    symboldata.overview := symboldata.overview ??
+        [ title :=        refsymbol.name
+        , constructor :=  RECORD[]
+        , methods :=      RECORD[]
+        , properties :=   RECORD[]
+        , members :=      RECORD[]
+        , tables :=       RECORD[]
+        , columns :=      RECORD[]
+        ];
+
+    symboldata.overview.columns :=
+        SELECT title :=         GetSymbolTitle(CELL[ symboltype := "column", name, definition := CELL[] ])
+             , name
+             , inherited :=     FALSE
+             , shortdescription := RenderMarkdownWithRTDClasses(parsedcomment.short, pagedata, refsymbol_markdownoptions)
+             , sublink :=       symbol.definition.type = "SCHEMA"
+                                    ? pagedata.path[END-1].sublink || "/" || EncodeValue(refsymbol.name) || "/" || EncodeValue(name)
+                                    : pagedata.path[END-1].sublink || "/" || EncodeValue(name)
+             , isselected :=    symbol.definition.type = "SCHEMA"
+                                    ? ToUppercase(subsubtoken) = ToUppercase(name)
+                                    : ToUppercase(subtoken) = ToUppercase(name)
+             , symboltype :=    "column"
+             , data :=          columns
+          FROM tblsymbol.definition.structure.columns
+      ORDER BY ToUppercase(name);
+  }
+
+
+  // Insert the path element for the subsymbol _after_ calculating objecttype member urls
+  IF (RecordExists(subsymbol))
+    INSERT CELL[ title := subsymbol.name, sublink := pagedata.path[END-1].sublink || "/" || ToLowercase(EncodeValue(subsymbol.name)) ]
+           INTO pagedata.path AT END;
+  IF (RecordExists(subsubsymbol))
+    INSERT CELL[ title := subsubsymbol.name, sublink := pagedata.path[END-1].sublink || "/" || ToLowercase(EncodeValue(subsymbol.name)) || "/" || ToLowercase(EncodeValue(subsubsymbol.name)) ]
+           INTO pagedata.path AT END;
+
+  INSERT CELL resourceref := CELL
+      [ filename := refsymbol.resourcename
+      , refsymbol.definition.line
+      , refsymbol.definition.col
+      ] INTO symboldata;
+
+  RETURN WrapPage(pagedata, "harescriptsymbol", symboldata);
+}
+
+RECORD FUNCTION RenderWebhareComponentPage(RECORD pagedata, RECORD component, STRING subtoken, RECORD options)
+{
+  options := ValidateOptions([ publiconly := TRUE, fs := DEFAULT OBJECT ], options, [ required := [ "fs" ]]);
+
+  STRING componentlink := pagedata.path[END-1].sublink || "/component/" || component.name;
+
+  RECORD attr := subtoken != "" ? RECORD(SELECT * FROM component.attributes WHERE name = subtoken) : DEFAULT RECORD;
+  IF (subtoken != "" AND NOT RecordExists(attr))
+    RETURN DEFAULT RECORD;
+
+  RECORD parsed := (attr ?? component).parsedcomment;
+
+  RECORD componentdata := CELL
+      [ title :=        component.name
+      , short :=        RenderMarkdownWithRTDClasses(parsed.short, pagedata, options)
+      , long :=         RenderMarkdownWithRTDClasses(parsed.long, pagedata, options)
+      , examples :=     (SELECT AS STRING ARRAY RenderMarkdownWithRTDClasses(examples, pagedata, options)
+                           FROM parsed.examples)
+      , usage :=        EncodeHTML(`<${component.name} />`)
+      , overview :=     DEFAULT RECORD
+      , menu :=         [ items := RECORD[]
+                        , type := "refnav__obj"
+                        ]
+      ];
+
+  RECORD ARRAY attributes :=
+      SELECT TEMPORARY sublink := componentlink || "/" || name
+           , name
+           , title :=         name
+           , isselected :=    ToUppercase(subtoken) = ToUppercase(name)
+           , sublink :=       sublink
+           , url :=           pagedata.referenceroot || sublink
+           , parsedcomment
+        FROM component.attributes;
+
+  IF (RecordExists(attributes))
+  {
+    INSERT [ title := "Attributes"
+           , items := attributes
+           ] INTO componentdata.menu.items AT END;
+  }
+
+  IF (RecordExists(attr))
+  {
+    componentdata.title := componentdata.title || " " || attr.name;
+    componentdata.usage := EncodeHTML(`<${component.name} ${attr.name}="..." />`);
+  }
+  ELSE
+    componentdata.overview :=
+        [ attributes :=     SELECT *
+                                 , shortdescription :=  RenderMarkdownWithRTDClasses(parsedcomment.short, pagedata, options)
+                                 , inherited :=         FALSE
+                              FROM attributes
+        ];
+
+  // Insert the path element for the 'main' symbol, which is used to calculate objecttype member urls
+  INSERT CELL[ title := component.name, sublink := componentlink ]
+         INTO pagedata.path AT END;
+
+  RETURN WrapPage(pagedata, "component", componentdata);
+}
+
+// Recursively add the members of all parent objects
+RECORD FUNCTION EnrichObjecttypeDefinition(RECORD symbol, OBJECT source)
+{
+  // The current members are not inherited
+  symbol.definition.members :=    SELECT *, ancestor := DEFAULT RECORD FROM symbol.definition.members;
+  symbol.definition.properties := SELECT *, ancestor := DEFAULT RECORD FROM symbol.definition.properties;
+  symbol.definition.methods :=    SELECT *, ancestor := DEFAULT RECORD FROM symbol.definition.methods;
+
+  RECORD basesymbol := symbol;
+  RECORD ancestorsymbol;
+
+  WHILE (RecordExists(basesymbol) AND basesymbol.definition.baseobject != "")
+  {
+    // Find the baseobject for the current symbol
+    STRING baseobject := basesymbol.definition.baseobject;
+
+    // Find the whlib that defines this object
+    STRING baseresource := source->GetObjectTypeImportFrom(symbol.resourcename, baseobject) ?? symbol.resourcename;
+
+    // Get the object's symbol definition
+    RECORD definition := source->GetSymbolDefinition(`${baseresource}#${baseobject}`);
+    IF (RecordExists(definition))
+    {
+      // Use this as the base symbol
+      basesymbol :=
+          CELL[ name := baseobject
+              , definition.symboltype
+              , ...definition
+              ];
+
+      // If this base symbol is not (marked) private, use it as the base object the new members are inherited from
+      BOOLEAN markedprivate := NOT basesymbol.definition.ispublic OR IsMarkedPrivate(basesymbol.definition.comment, basesymbol.symboltype);
+      IF (NOT markedprivate)
+        ancestorsymbol := basesymbol;
+
+      // Add all base members that are not present in the current symbol definition
+      symbol.definition.members :=
+          symbol.definition.members CONCAT
+          SELECT *
+               , ancestor := ancestorsymbol
+            FROM basesymbol.definition.members
+          WHERE ToUppercase(name) NOT IN (SELECT AS STRING ARRAY ToUppercase(name) FROM symbol.definition.members);
+      symbol.definition.properties :=
+          symbol.definition.properties CONCAT
+          SELECT *
+               , ancestor := ancestorsymbol
+            FROM basesymbol.definition.properties
+          WHERE ToUppercase(name) NOT IN (SELECT AS STRING ARRAY ToUppercase(name) FROM symbol.definition.properties);
+      symbol.definition.methods :=
+          symbol.definition.methods CONCAT
+          SELECT *
+               , ancestor := ancestorsymbol
+            FROM basesymbol.definition.methods
+          WHERE ToUppercase(name) NOT IN (SELECT AS STRING ARRAY ToUppercase(name) FROM symbol.definition.methods);
+    }
+    ELSE
+      Abort(`Could not find definition for objecttype '${baseobject}'`);
+  }
+  RETURN symbol;
+}
+
+STRING FUNCTION DetermineSourceFileType(STRING filename, BLOB data)
+{
+  SWITCH (GetExtensionFromPath(filename))
+  {
+    CASE ".whlib", ".whscr"   { RETURN "harescript"; }
+  }
+  RETURN "";
+}
+
+RECORD FUNCTION WrapPage(RECORD pagedata, STRING pagetype, RECORD wittydata)
+{
+  wittydata := CELL[ referenceroot := pagedata.referenceroot
+                   , ...wittydata
+                   ];
+  RETURN CELL[ ...pagedata
+             , redirect :=      ""
+             , pagetype :=      pagetype
+             , pagedata :=      wittydata
+             , body :=          PTR EmbedWittyComponent(Resolve("devsite.witty:" || pagetype), wittydata)
+             , dependencies :=  CellExists(wittydata, "dependencies") ? wittydata.dependencies : STRING[]
+             ];
+}
+RECORD FUNCTION WrapRedirect(RECORD pagedata, STRING redirecturl)
+{
+  redirecturl := ResolvetoAbsoluteURL(pagedata.referenceroot, redirecturl);
+  RETURN CELL[ ...pagedata
+             , redirect := redirecturl
+             , pagetype := "redirect"
+             , pagedata := [ redirect := redirecturl ]
+             , body := PTR Redirect(redirecturl)
+             ];
+}
+
+STRING FUNCTION RewriteLink(STRING link, RECORD pagedata, RECORD options)
+{
+  IF (link LIKE "%*")
+  {
+    // Link to symbol by name
+    STRING ARRAY parts := Tokenize(Substring(link, 1), "::");
+    RECORD ARRAY symbolmatches := LookupIdentifier(parts[0], CELL[ options.publiconly, options.fs ]);
+
+    //TODO generalize URL generation for a symbol
+    symbolmatches := SELECT *
+                          , title :=      name
+                          , sublink :=    __GetPageURLForSymbol(DEFAULT RECORD, symbolmatches)
+                       FROM symbolmatches
+                      WHERE RecordExists(topic);
+
+    IF (Length(symbolmatches) = 1)
+    {
+      IF (Length(parts) > 1)
+      {
+        RECORD sub :=
+            SELECT *
+              FROM symbolmatches[0].definition.properties CONCAT symbolmatches[0].definition.members CONCAT symbolmatches[0].definition.methods
+             WHERE ToUppercase(name) = ToUppercase(parts[1]);
+        IF (RecordExists(sub))
+          RETURN pagedata.referenceroot || symbolmatches[0].sublink || "/" || EncodeURL(ToLowercase(sub.name));
+        RETURN "";
+      }
+      RETURN pagedata.referenceroot || symbolmatches[0].sublink;
+    }
+    ELSE IF (Length(symbolmatches) > 1)
+      RETURN AddVariableToUrl(pagedata.referenceroot || "search", "query", Substring(link, 1));
+    ELSE
+      RETURN "";
+  }
+  ELSE IF (link LIKE "mod::*")
+  {
+    RETURN "";
+  }
+  ELSE IF (link LIKE "topic:*")
+  {
+    // Absolute topic link
+    STRING ARRAY parts := Tokenize(Substring(link, 6), "/");
+    RECORD topicinfo := GetDevTopic(parts[0], CELL[ options.publiconly, options.fs ]);
+    IF (RecordExists(topicinfo))
+    {
+      IF (Length(parts) > 1)
+      {
+        RECORD subpage := SELECT * FROM topicinfo.subpages WHERE ToUppercase(name) = ToUppercase(parts[1]);
+        IF (RecordExists(subpage))
+          RETURN pagedata.referenceroot || subpage.sublink;
+      }
+      ELSE
+        RETURN pagedata.referenceroot || topicinfo.sublink;
+    }
+    RETURN "";
+  }
+  ELSE IF (RecordExists(options.topicinfo) AND link NOT LIKE "*:*" AND link NOT LIKE "*/*")
+  {
+    // Possible relative topic link
+    RECORD subpage := SELECT * FROM options.topicinfo.subpages WHERE ToUppercase(name) = ToUppercase(link);
+    IF (RecordExists(subpage))
+      RETURN pagedata.referenceroot || subpage.sublink;
+    RETURN "";
+  }
+  ELSE IF (RecordExists(options.symbol))
+  {
+    RECORD linkedsymbol := options.source->LookupSymbolByRelativeRef(options.symbol.symbolref, link);
+    IF (RecordExists(linkedsymbol))
+      RETURN __GetPageURLForSymbol(pagedata, linkedsymbol);
+    RETURN "";
+  }
+  RETURN link;
+}
+
+STRING FUNCTION RenderMarkdownWithRTDClasses(RECORD md, RECORD pagedata, RECORD options)
+{
+  options := ValidateOptions(
+      [ nocleanup := FALSE
+      , publiconly := TRUE
+      , topicinfo := DEFAULT RECORD
+      , fs := DEFAULT OBJECT
+      , source := DEFAULT OBJECT
+      , symbol := DEFAULT RECORD
+      ], options, [ required := [ "fs" ]]);
+
+  IF (NOT options.nocleanup)
+    md := CleanMarkdown(md);
+
+  STRING html := RenderMarkdownToHTML(md, [ rewritelink := PTR RewriteLink(#1, pagedata, options) ]);
+
+  FOREVERY (RECORD subst FROM
+      [ [ source := '<h1>',    replacement := '<h1 class="heading1">' ]
+      , [ source := '<h2>',    replacement := '<h2 class="heading2">' ]
+      , [ source := '<h3>',    replacement := '<h3 class="heading3">' ]
+      , [ source := '<h4>',    replacement := '<h4 class="heading4">' ]
+      , [ source := '<p>',     replacement := '<p class="normal">' ]
+      , [ source := '<ul>',    replacement := '<ul class="unordered">' ]
+      , [ source := '<ol>',    replacement := '<ol class="ordered">' ]
+      , [ source := '<pre>',   replacement := '<pre class="line-numbers">' ]
+      , [ source := '<table>', replacement := '<table class="wh-rtd__table">' ]
+      , [ source := '&#8203;', replacement := '' ] //Removes zerowidth space used for documenting getnextcrontime
+      ])
+  {
+    html := Substitute(html, subst.source, subst.replacement);
+  }
+
+  RETURN html;
+}
+
+RECORD FUNCTION GetToplevelData(OBJECT fs)
+{
+  RECORD ARRAY topics := GetAllTopics(fs);
+  RECORD ARRAY topicgroups := GetAllTopicGroups(fs);
+
+  FOREVERY(RECORD topicgroup FROM topicgroups)
+  {
+    RECORD ARRAY expandedtopics := SELECT * FROM topics WHERE name IN topicgroup.topics ORDER BY SearchElement(topicgroup.topics, name);
+    DELETE FROM topics WHERE name IN topicgroup.topics;
+    INSERT CELL expandedtopics := expandedtopics INTO topicgroups[#topicgroup];
+  }
+
+  IF(Length(topics) > 0) //Leftovers!
+  {
+    topics := SELECT * FROM topics ORDER BY ToUppercase(name);
+    INSERT [ title := "Miscellaneous"
+           , topics := (SELECT AS STRING ARRAY name FROM topics)
+           , expandedtopics := topics
+           ] INTO topicgroups AT END;
+  }
+
+  RECORD topleveldata := CELL[ topics
+                             , topicgroups
+                             ];
+  RETURN topleveldata;
+}
+
+PUBLIC RECORD FUNCTION GetDevsitePage(OBJECT fs, STRING referenceroot, STRING subpath, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  options := ValidateOptions([ publiconly :=  TRUE
+                             , query :=       ""
+                             ], options);
+
+  RECORD pagedata := CELL[ path :=            RECORD[] // [ title := "Topics", sublink := "" ] ]
+                         , referenceroot
+                         , dependencies :=    STRING[]
+                         ];
+
+  IF(subpath = "") //top level
+    RETURN WrapPage(pagedata, "toplevel", GetToplevelData(fs));
+
+  STRING ARRAY rawpathtoks := Tokenize(subpath,'/');
+  STRING ARRAY pathtoks := rawpathtoks[END - 1] = "" ? ArraySlice(rawpathtoks, 0, LENGTH(rawpathtoks) - 1) : rawpathtoks;
+
+  IF(Length(pathtoks) >= 1 AND pathtoks[0] = "search")
+  {
+    //for test purposes, build a fake url to get query parameter out of subpath
+    STRING searchfor := options.query ?? GetWebVariable("query");
+    /* FIXME USE CONSILIO ?!
+    RECORD res := ExecuteDocSearch(referenceroot, searchfor);
+    ABORT(res);
+    */
+      //pagedata.doccontents := PTR EmbedWittyComponent("resultspage", [ results := res.results ]);
+      //INSERT [ title := "Search", link := this->absolutebaseurl ] INTO pagedata.breadcrumb AT END;
+      //pagedata.ishome := TRUE;
+
+    //public symbol based implementation,
+    IF(searchfor LIKE '"*"') //crude parser until consilio userquery parsing can take over. Sublime warps the symbol
+      searchfor := DecodeJava(Substring(searchfor, 1, Length(searchfor)-2));
+
+    //FIXME build a search result page to deal with no results, and probably multiple results?
+    RECORD ARRAY symbolmatches := LookupIdentifier(searchfor, CELL[ options.publiconly, fs ]);
+
+    //TODO generalize URL generation for a symbol
+    symbolmatches := SELECT title :=      name
+                          , sublink :=    __GetPageURLForSymbol(DEFAULT RECORD, symbolmatches)
+                       FROM symbolmatches
+                      WHERE RecordExists(topic);
+
+    RECORD result;
+    IF(Length(symbolmatches)=1)
+      RETURN WrapRedirect(pagedata, symbolmatches[0].sublink);
+    ELSE
+      RETURN WrapPage(pagedata, "searchresults", [ results := symbolmatches ]);
+  }
+
+  IF(Length(pathtoks) >= 1)
+  {
+    RECORD topicinfo := GetDevTopic(pathtoks[0], CELL[ options.publiconly, fs ]);
+    IF(NOT RecordExists(topicinfo))
+      RETURN DEFAULT RECORD;
+
+    INSERT CELL[ title := topicinfo.title, sublink := topicinfo.sublink ]
+           INTO pagedata.path AT END;
+
+    IF(Length(pathtoks) = 1) // <topicname>
+    {
+      BLOB introfile := GetWebhareResource(MergePath(topicinfo.resourcepath, "intro.md"), [allowmissing := TRUE]);
+      MACRO PTR introptr;
+      IF (Length(introfile) > 0)
+      {
+        RECORD intromd := ParseMarkdown(BlobToString(introfile), [ flavor := "webhare" ]);
+        introptr := PTR Print(RenderMarkdownWithRTDClasses(intromd, pagedata, CELL[ topicinfo, fs, options.publiconly ]));
+      }
+
+      STRING ARRAY sectionresources;
+      FOREVERY (RECORD section FROM topicinfo.sections)
+      {
+        sectionresources := sectionresources CONCAT section.resources;
+        topicinfo.sections[#section].identifiers :=
+            SELECT *
+                 , shortdescription := RenderMarkdownWithRTDClasses(parsedcomment.short, pagedata, CELL[ topicinfo, fs, options.publiconly ])
+              FROM section.identifiers;
+        topicinfo.sections[#section].components :=
+            SELECT *
+                 , shortdescription := RenderMarkdownWithRTDClasses(parsedcomment.short, pagedata, CELL[ topicinfo, fs, options.publiconly ])
+              FROM section.components;
+      }
+
+      RECORD data := CELL[ ...topicinfo
+                         , html :=          introptr
+                         , dependencies :=  [ MergePath(topicinfo.resourcepath, "topic.xml")
+                                            , MergePath(topicinfo.resourcepath, "intro.md")
+                                            , ...(SELECT AS STRING ARRAY COLUMN resourcename FROM topicinfo.subpages)
+                                            , ...sectionresources
+                                            ]
+                         ];
+
+      RETURN WrapPage(pagedata, "topic", data);
+    }
+    ELSE IF(Length(pathtoks) >= 2)
+    {
+      IF (pathtoks[1] IN [ "symbol" ] AND LENGTH(pathtoks) >= 3)
+      {
+        RECORD ARRAY symbols := GetIdentifiersForTopic(pathtoks[0], CELL[ options.publiconly, fs ]);
+        RECORD symbol :=
+            SELECT *
+              FROM symbols
+             WHERE ToLowercase(name) = ToLowercase(pathtoks[2]);
+
+        IF (NOT RecordExists(symbol))
+          RETURN DEFAULT RECORD;
+
+        RETURN RenderWebhareSymbolPage(pagedata, symbol, Length(pathtoks) >= 4 ? DecodeURL(pathtoks[3]) : "", Length(pathtoks) >= 5 ? DecodeURL(pathtoks[4]) : "", CELL[ options.publiconly, fs ]);
+      }
+
+      IF (pathtoks[1] IN [ "component" ] AND LENGTH(pathtoks) >= 3)
+      {
+        RECORD ARRAY components := GetComponentsForTopic(pathtoks[0], CELL[ options.publiconly, fs ]);
+        RECORD component :=
+            SELECT *
+              FROM components
+             WHERE name = ToLowercase(pathtoks[2]);
+
+        IF (NOT RecordExists(component))
+          RETURN DEFAULT RECORD;
+
+        RETURN RenderWebhareComponentPage(pagedata, component, Length(pathtoks) >= 4 ? pathtoks[3] : "", CELL[ options.publiconly, fs ]);
+      }
+
+      IF (pathtoks[1] IN [ "schema", "table" ] AND LENGTH(pathtoks) >= 3)
+      {
+        RECORD ARRAY elts := GetSchemasAndTablesForTopic(pathtoks[0], CELL[ options.publiconly, fs ]);
+        RECORD elt :=
+            SELECT *
+              FROM elts
+             WHERE elttype = pathtoks[1]
+               AND schemaname = ToLowercase(pathtoks[2])
+               AND (elttype = "table" ? LENGTH(pathtoks) > 3 AND name = ToLowercase(pathtoks[3]) : TRUE);
+
+        IF (NOT RecordExists(elt))
+          RETURN DEFAULT RECORD;
+
+        ABORT("X");
+        //RETURN RenderWebhareSchemaTablePage(pagedata, elt, Length(pathtoks) >= 4 ? pathtoks[3] : "", CELL[ options.publiconly, fs ]);
+      }
+
+      IF (LENGTH(pathtoks) = 2)
+      {
+        STRING resourcename := MergePath(topicinfo.resourcepath, pathtoks[1]) || ".md";
+        BLOB targetfile := GetWebhareResource(resourcename);
+        RECORD md := ParseMarkdown(BlobToString(targetfile), [ flavor := "webhare" ]);
+        md := CleanMarkdown(md);
+
+        RECORD menu :=
+            [ items := RECORD[]
+            , type := "refnav__md"
+            ];
+
+        FOREVERY (RECORD obj FROM md.children)
+        {
+          IF (obj.type NOT IN [ "setextheading", "atxheading" ])
+            CONTINUE;
+          IF (obj.level = 1)
+          {
+            INSERT
+                [ title := RenderMarkdownToText(obj)
+                , items := RECORD[]
+                ] INTO menu.items AT END;
+          }
+          ELSE IF (obj.level = 2)
+          {
+            IF (NOT RecordExists(menu.items))
+              INSERT
+                  [ title := ""
+                  , items := RECORD[]
+                  ] INTO menu.items AT END;
+            INSERT
+                [ title := RenderMarkdownToText(obj)
+                , isselected := FALSE
+                , url := ""
+                ] INTO menu.items[END-1].items AT END;
+          }
+        }
+
+        INSERT CELL[ title := GetMDTitle(md), sublink := topicinfo.sublink || "/" || pathtoks[1] ]
+               INTO pagedata.path AT END;
+
+        RECORD data := [ html :=          PTR Print(RenderMarkdownWithRTDClasses(md, pagedata, CELL[ topicinfo, fs, options.publiconly, nocleanup := TRUE ]))
+                       , menu :=          RecordExists(menu.items) AND RecordExists(SELECT FROM menu.items WHERE Length(items.items) > 0) ? menu : DEFAULT RECORD
+                       , dependencies :=  [ resourcename ]
+                       ];
+        RETURN WrapPage(pagedata, "topicdoc", data);
+      }
+    }
+  }
+
+  RETURN DEFAULT RECORD;
+}

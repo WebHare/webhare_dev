@@ -1,0 +1,93 @@
+<?wh
+LOADLIB "mod::publisher/lib/widgets.whlib";
+
+/*
+Note:
+RGBaToColorString( ColorStringToRGBa( color) ) is used to correct color hex string into valid hex color string
+like ff9900 becomes #ff9900
+*/
+
+PUBLIC OBJECTTYPE EmbedSourceCode EXTEND WidgetBase
+<
+  UPDATE PUBLIC MACRO Render()
+  {
+    this->EmbedComponent( [ type      := ToUpperCase(this->data.type) = "WITTY" ? 'html' : this->data.type
+                          , code      := EncodeValue(this->data.code)
+                          , ispreview := this->context->IsRTDPreview()
+                          ]);
+  }
+>;
+
+PUBLIC OBJECTTYPE EmbedTip EXTEND WidgetBase
+<
+  MACRO PTR description;
+
+  MACRO NEW()
+  {
+    this->description := PTR this->context->OpenRTD(this->data.description)->RenderAllObjects;
+  }
+
+  UPDATE PUBLIC MACRO Render()
+  {
+    STRING icon; /* blue, green, yellow, red, grey */
+    STRING color;
+
+    IF( this->widgettype = "http://www.webhare.dev/xmlns/widgets/tip-criticalwarning" )
+    {
+      icon := "fa fa-exclamation-triangle";
+      color:= "red";
+    }
+    ELSE IF( this->widgettype = "http://www.webhare.dev/xmlns/widgets/tip-warning" )
+    {
+      icon := "fa fa-exclamation";
+      color:= "yellow";
+    }
+    ELSE IF( this->widgettype = "http://www.webhare.dev/xmlns/widgets/tip-check" )
+    {
+      icon := "fa fa-check";
+      color:= "blue";
+    }
+    ELSE IF( this->widgettype = "http://www.webhare.dev/xmlns/widgets/tip" )
+    {
+      color       := this->data.color != "" ? this->data.color : "blue";
+
+      SWITCH( this->data.icon )
+      {
+        CASE "check"
+        {
+          icon := "fa fa-check";
+        }
+        CASE "warning"
+        {
+          icon := "fa fa-exclamation-triangle";
+        }
+        CASE "exclamation"
+        {
+          icon := "fa fa-exclamation";
+        }
+        CASE "question"
+        {
+          icon := "fa fa-question";
+        }
+      }
+    }
+
+
+    this->EmbedComponent( [ title       := this->data.title
+                          , description := this->description
+                          , color       := color
+                          , icon        := icon
+                          ] );
+  }
+>;
+
+
+PUBLIC OBJECTTYPE EmbedAnchor EXTEND WidgetBase
+<
+  UPDATE PUBLIC MACRO Render()
+  {
+    this->EmbedComponent( [ anchor    := this->data.anchor
+                          , ispreview := this->context->IsRTDPreview()
+                          ] );
+  }
+>;

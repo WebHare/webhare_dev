@@ -1,0 +1,65 @@
+[component htmlhead]
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Realisatie: WebHare bv
+                   http://www.webhare.nl/ -->
+
+  <link rel="apple-touch-icon" sizes="180x180" href="[imgroot]favicons/apple-touch-icon.png"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="[imgroot]favicons/favicon-32x32.png"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="[imgroot]favicons/favicon-16x16.png"/>
+  <link rel="manifest" href="[imgroot]favicons/manifest.json"/>
+  <link rel="mask-icon" href="[imgroot]favicons/safari-pinned-tab.svg" color="#008fd1"/>
+  <link rel="shortcut icon" href="[imgroot]favicons/favicon.ico"/>
+  <meta name="apple-mobile-web-app-title" content="[sitetitle]"/>
+  <meta name="application-name" content="[sitetitle]"/>
+  <meta name="msapplication-config" content="[imgroot]favicons/browserconfig.xml"/>
+  <meta name="theme-color" content="#ffffff"/>
+
+  [if ishomepage][if searchpageurl]
+    <script type="application/ld+json">
+    {"@context": "http://schema.org"
+    ,"@type": "WebSite"
+    ,"url": "[siteroot]"
+    ,"potentialAction": {"@type": "SearchAction"
+                        ,"target": "[searchpageurl]?words={query}"
+                        ,"name": "words"
+                        ,"query-input": "required name=query"
+                        }
+    }
+    </script>
+  [/if][/if]
+
+  [![embed hotjar]!]
+[/component]
+
+[component htmlbody]
+
+  [embed ./header/header.witty:header]
+
+  [if pathnav]
+    <nav id="pathnav" class="centercontainer">
+      <ol itemscope itemtype="http://schema.org/BreadcrumbList">
+        [forevery pathnav]
+          <li itemprop="itemListElement" itemscope itemtype="http://schema.org/ListItem">
+            <a itemprop="item" href="[link]">
+              <span itemprop="name">[title]</span>
+              <meta itemprop="position" content="[position]" />
+            </a>
+          </li>
+        [/forevery]
+      </ol>
+    </nav>
+  [/if]
+
+  [embed ./main/main.witty:main]
+
+  [embed ./footer/footer.witty:footer]
+
+  [if cookiemsg]
+    <div id="cookiemsg" class="sitemessage">
+      <div class="centercontainer">
+        <div class="content">[cookiemsg]</div>
+        <div class="buttonholder"><button class="close">[gettid webdesigns.devsite.frontend.closemessage]</button></div>
+      </div>
+    </div>
+  [/if]
+[/component]

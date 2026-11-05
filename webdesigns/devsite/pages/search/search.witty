@@ -1,0 +1,73 @@
+[component searchresults]
+<div class="documentcontent">
+
+  <form method="get" action="./" id="headersearchform">
+    <input type="search" name="words" value="[words]" data-suggest="{&#34;catalog&#34;:&#34;[sitename:java]&#34;}" />
+    <button type="submit" class="bg--green">
+      <span class="label">[gettid webdesigns.devsite.frontend.search.button]</span>
+      <span class="fa fa-search"></span>
+    </button>
+  </form>
+
+
+  <div class="centercontent">
+    <div id="searchresults">
+
+      <div id="resultscount">[resultsstr]</div>
+      <div id="loadingresults">
+        <span class="fa fa-spinner fa-pulse"></span> [gettid webdesigns.devsite.frontend.search.retrievingresults]
+      </div>
+
+      [if sectionresults]
+        [forevery sectionresults]
+          <div class="sectionhilight">
+            <h2>[gettid webdesigns.devsite.frontend.search.resultswithin]: [title] <span class="count">([totalcount])</span></h2>
+            <ul class="contentlist">
+              [forevery summary]
+                [embed listitem]
+              [/forevery]
+            </ul>
+            [if more]
+              <a class="more" href="./?words=[words]&section=[section]"><span class="fa fa-chevron-right"></span>[gettid webdesigns.devsite.frontend.search.moreresultsin] &quot;[title]&quot;</a>
+            [/if]
+          </div>
+        [/forevery]
+
+        [if summary]<h2>[gettid webdesigns.devsite.frontend.search.othersiteresults]</h2>[/if]
+
+      [elseif section]
+        <h2>[gettid webdesigns.devsite.frontend.search.resultswithin]: [section.title]</h2>
+      [/if]
+
+      <ul class="contentlist contentlist--others">
+        [forevery summary]
+          [embed listitem]
+        [/forevery]
+      </ul>
+
+      <div id="moreresults" data-pagenr="0" class="[if more]active[/if]">
+        <div class="loading"><span class="fa fa-spinner fa-pulse"></span> [gettid webdesigns.devsite.frontend.search.retrievingresults]</div>
+        <div class="more">[gettid webdesigns.devsite.frontend.search.showmore]<span class="fa fa-angle-down"></span></div>
+      </div>
+
+    </div>
+  </div>
+</div>
+[/component]
+
+
+[component listitem]
+  <li>
+    <a href="[link]" [if imageurl]class="withthumb"[/if]>
+      <span class="image" [if bgcolor]style="background-color:[bgcolor];"[/if]>
+        [if imageurl]<img src="[imageurl]" class="thumb" alt="[title]" srcset="[imageurl] 1x, [imageurl2] 2x" />[/if]
+      </span>
+      <strong class="title">
+        [title]
+        [if filetype]&nbsp;<span class="filesize">([filetype], [filesize])</span>[/if]
+      </strong>
+      <span class="description">[description:none]</span>
+    </a>
+  </li>
+[/component]
+

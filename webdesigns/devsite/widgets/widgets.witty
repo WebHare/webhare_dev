@@ -1,0 +1,27 @@
+[component sourcecodeobject]
+  <div class="widget widget_sourcecode">
+    <pre class="language-[type]">
+      <code class="language-[type]">[code:none]</code>
+    </pre>
+  </div>
+[/component]
+
+
+[component tip]
+  <div class="widget widget_tip color-[color]">
+    <div class="container">
+      [if icon]<span class="icon [icon]"></span>[/if]
+      <div class="title">[title]</div>
+      <div class="description">[description]</div>
+    </div>
+  </div>
+[/component]
+
+
+[component anchor]
+  [if ispreview]
+    <div class="widget-anchor">#[anchor]</div>
+  [else]
+    <a class="widget-anchor" name="[anchor]"></a>
+  [/if]
+[/component]

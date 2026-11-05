@@ -1,0 +1,37 @@
+<?wh
+
+PUBLIC STRING FUNCTION FixupPath(STRING infile)
+{
+  infile := Substitute(infile, '::', '/');
+  RETURN infile;
+}
+
+//TODO: Move this into wh::util/algorithms.whlib?  (FIXME: not with this name, conflicts with searchelement and lastelement not taking arrays)
+PUBLIC INTEGER FUNCTION SearchFirstElement(VARIANT list, VARIANT ARRAY elements)
+{
+  RETURN
+      (SELECT AS INTEGER Min(SearchElement(list, element)) + 1
+         FROM ToRecordArray(elements, "element")
+        WHERE element IN list) - 1;
+}
+
+/** Remove unsafe stuff from markdown content
+    @param tree Markdown tree
+    @return Cleaned markdown tree
+*/
+PUBLIC RECORD FUNCTION CleanMarkdown(RECORD tree)
+{
+  IF (NOT RecordExists(tree) OR tree.type IN [ "htmltag", "htmlblock" ])
+    RETURN DEFAULT RECORD;
+
+  RECORD ARRAY newchildren;
+  FOREVERY (RECORD rec FROM tree.children)
+  {
+    RECORD cleaned := CleanMarkdown(rec);
+    IF (RecordExists(cleaned))
+      INSERT cleaned INTO newchildren AT END;
+  }
+
+  tree.children := newchildren;
+  RETURN tree;
+}

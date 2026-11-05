@@ -1,0 +1,43 @@
+[component main]
+  <main class="centercontainer">
+    [if sidenav]
+      <aside class="aside--[if ismanual]manualnav[else]subnav[/if]">
+        [if ismanual]
+          [embed ../components/sidenav/sidenav.witty:manualsidenav]
+        [else]
+          [embed ../components/sidenav/sidenav.witty:basicsidenav]
+        [/if]
+      </aside>
+    [/if]
+
+    <article>
+      <!--wh_consilio_content-->
+      [if contenttitle]<h1 class="heading1">[contenttitle]</h1>[/if]
+      [contents]
+      <!--/wh_consilio_content-->
+
+      [if ismanual]
+        <div class="pagebottomnav">
+          [if previouspage]
+            <a href="[url]" class="previouspage">
+              <span class="fa fa-angle-left"></span>
+              [gettid webdesigns.devsite.frontend.main.previouspage]
+            </a>
+          [/if]
+          [if nextpage]
+            <a href="[url]" class="nextpage">
+              [gettid webdesigns.devsite.frontend.main.nextpage]
+              <span class="fa fa-angle-right"></span>
+            </a>
+          [/if]
+        </div>
+      [/if]
+
+      [if summary]
+        [embed ../components/summary/summary.witty:summary]
+      [/if]
+
+    </article>
+
+  </main>
+[/component]

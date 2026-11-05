@@ -1,0 +1,52 @@
+<?wh
+
+LOADLIB "wh::witty.whlib";
+LOADLIB "wh::internet/urls.whlib";
+
+LOADLIB "mod::publisher/lib/webdesign.whlib";
+
+LOADLIB "mod::system/lib/webserver.whlib";
+
+
+PUBLIC OBJECTTYPE MyWebharePage EXTEND WebPageBase
+<
+  UPDATE PUBLIC MACRO PTR FUNCTION GetPageBody()
+  {
+    IF(IsRequestPost())
+    {
+      STRING requiredorigin := UnpackURL(GetrequestURL()).origin;
+      IF(GetWebHeader("Origin") != requiredorigin) //a CORS request setting the redirect can't be good.
+        THROW NEW Exception(`Untrusted origin header '${GetWebHeader("Origin")}', want '${requiredorigin}'`);
+
+      STRING newtargetwebhare := GetWebVariable("webharelocation");
+      UpdateWebCookie("mywebhare", newtargetwebhare, [ secure := TRUE, httponly := TRUE, samesite := "lax", lifetime := 30*86400 ]);
+      Redirect(GetRequestURL());
+    }
+
+    STRING targeturl := GetWebVariable("targeturl") ?? Substring(GetRequestURL(), Length(this->webdesign->targetsite->webroot));
+    STRING targetwebhare := GetWebCookie("mywebhare");
+
+    IF(targetwebhare != "" AND targeturl != "")
+    {
+      UpdateWebCookie("mywebhare", targetwebhare, [ secure := TRUE, httponly := TRUE, samesite := "lax", lifetime := 30*86400 ]);
+      Redirect(ResolveToAbsoluteURL(targetwebhare, "/" || targeturl));
+    }
+
+    RECORD wittydata := [ feedbackurl := UpdateURLVariables(GetRequestURL(), [ targeturl := targeturl ])
+                        , webharelocation := GetWebCookie("mywebhare")
+                        ];
+    RETURN PTR EmbedWittyComponent(Resolve("mywebhare.witty:setwebhare"), wittydata);
+  }
+>;
+
+PUBLIC RECORD FUNCTION HandleMyGoto(RECORD indata)
+{
+  STRING requrl := GetRequestURL();
+  IF(requrl LIKE "http://my.*" OR requrl LIKE "https://my.*") //looks like my.webhare.dev...
+  {
+    //redirect ourselves 'out of' /.webhare/direct
+    Redirect(UnpackURL(requrl).origin || "/?targeturl=" || EncodeURL(UnpackURL(requrl).urlpath));
+  }
+
+  RETURN indata;
+}

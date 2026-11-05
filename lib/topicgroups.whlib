@@ -1,0 +1,81 @@
+<?wh
+
+LOADLIB "wh::adhoccache.whlib";
+LOADLIB "wh::util/algorithms.whlib";
+LOADLIB "wh::xml/dom.whlib";
+LOADLIB "wh::xml/xsd.whlib";
+
+LOADLIB "mod::system/lib/resources.whlib";
+LOADLIB "mod::system/lib/internal/webhareconstants.whlib";
+
+RECORD FUNCTION ParseTopicGroups(STRING module, BLOB indoc)
+{
+  RECORD basedata :=
+      [ module := module
+      , topicgroups := RECORD[]
+      ];
+
+  OBJECT xml := MakeXMLDocument(indoc);
+  IF (ObjectExists(xml->documentelement))
+    FOREVERY(OBJECT topicgroup FROM xml->documentelement->ListChildren("http://www.webhare.net/xmlns/dev/topic", "group"))
+    {
+      RECORD grp := [ title := topicgroup->GetAttribute("title")
+                    , topics := ParseXSList(topicgroup->GetAttribute("topics"))
+                    ];
+
+      INSERT grp INTO basedata.topicgroups AT END;
+    }
+
+  RETURN basedata;
+}
+
+RECORD FUNCTION GetCachableTopicGroups(OBJECT fs, STRING ARRAY modules)
+{
+  STRING ARRAY eventmasks := [ "wh:softreset" ]; // for module updates
+
+  RECORD ARRAY groupfiles;
+  FOREVERY(STRING mod FROM modules)
+  {
+    STRING respath := `mod::${mod}/doc/topics/topicgroups.xml`;
+    eventmasks := eventmasks CONCAT GetResourceEventMasks([respath]);
+
+    BLOB groupsxml := GetWebhareResource(respath, [ allowmissing := TRUE ]);
+    IF(Length(groupsxml) = 0)
+      CONTINUE;
+
+    INSERT ParseTopicGroups(mod, groupsxml) INTO groupfiles AT END;
+  }
+
+  groupfiles := SELECT *
+                  FROM groupfiles
+              ORDER BY module IN whconstant_builtinmodules ? SearchElement(whconstant_builtinmodules, module) : 999 //builtin modules may use their standard ordering
+                     , ToUppercase(module);
+
+  RECORD ARRAY topicgroups;
+  FOREVERY(RECORD groupfile FROM groupfiles)
+    topicgroups := topicgroups CONCAT groupfile.topicgroups;
+
+  RETURN
+      [ value :=        topicgroups
+      , eventmasks :=   GetSortedSet(eventmasks)
+      ];
+}
+
+PUBLIC RECORD ARRAY FUNCTION GetAllTopicGroups(OBJECT fs, RECORD options DEFAULTSTO DEFAULT RECORD)
+{
+  options := ValidateOptions(
+      [ builtin :=    FALSE
+      ], options);
+
+  STRING ARRAY modules := options.builtin
+      ? whconstant_builtinmodules
+      : fs->DevGetInstalledModuleNames();
+
+  RECORD ARRAY topicgroups :=  GetAdhocCached(CELL
+      [ "topicgroups"
+      , modules
+      , fskey :=      fs->GetCacheKey()
+      ], PTR GetCachableTopicGroups(fs, modules));
+
+  RETURN topicgroups;
+}

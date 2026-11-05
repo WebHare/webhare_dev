@@ -1,0 +1,91 @@
+<?wh
+
+LOADLIB "mod::system/lib/testframework.whlib";
+
+LOADLIB "mod::webhare_dev/lib/devsite/support.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/support.whlib";
+
+MACRO TestSearchFirstElement()
+{
+  TestEq(0, SearchFirstElement([ 1, 2, 3 ], [ 3, 2, 1 ]));
+  TestEq(1, SearchFirstElement([ 1, 2, 3 ], [ 2, 3 ]));
+  TestEq(2, SearchFirstElement([ 1, 2, 3 ], [ 3, 4, 5 ]));
+  TestEq(-1, SearchFirstElement([ 1, 2, 3 ], [ 4, 5 ]));
+  TestEq(-1, SearchFirstElement(INTEGER[], [ 1 ]));
+  TestEq(-1, SearchFirstElement([ 1 ], INTEGER[]));
+}
+
+
+MACRO TestTabHandling()
+{
+  TestEQMembers(
+      [ line :=       "a"
+      , gotspaces :=  4
+      , relcolumn :=  5
+      , eol :=        FALSE
+      ], ParseInitialSpaces("\ta", -1, 1, 4), "*");
+
+  TestEQMembers(
+      [ line :=       "   a"
+      , gotspaces :=  1
+      , relcolumn :=  2
+      , eol :=        FALSE
+      ], ParseInitialSpaces("\ta", 1, 1, 4), "*");
+
+  TestEQMembers(
+      [ line :=       "  a"
+      , gotspaces :=  1
+      , relcolumn :=  3
+      , eol :=        FALSE
+      ], ParseInitialSpaces("\ta", 1, 2, 4), "*");
+
+  TestEQMembers(
+      [ line :=       " a"
+      , gotspaces :=  1
+      , relcolumn :=  4
+      , eol :=        FALSE
+      ], ParseInitialSpaces("\ta", 1, 3, 4), "*");
+
+  TestEQMembers(
+      [ line :=       "a"
+      , gotspaces :=  1
+      , relcolumn :=  5
+      , eol :=        FALSE
+      ], ParseInitialSpaces("\ta", 1, 4, 4), "*");
+
+  TestEQMembers(
+      [ line :=       ""
+      , gotspaces :=  7
+      , relcolumn :=  10
+      , eol :=        TRUE
+      ], ParseInitialSpaces("\t\t ", -1, 3, 4), "*");
+
+  TestEQMembers(
+      [ line :=       "    "
+      , gotspaces :=  3
+      , relcolumn :=  6
+      , eol :=        FALSE
+      ], ParseInitialSpaces("\t\t ", 3, 3, 4), "*");
+
+
+  TestEQ(1, GetColumnAfterText("", 1, 4));
+  TestEQ(5, GetColumnAfterText("\t", 1, 4));
+  TestEQ(5, GetColumnAfterText("\t", 2, 4));
+  TestEQ(5, GetColumnAfterText("\t", 3, 4));
+  TestEQ(5, GetColumnAfterText("\t", 4, 4));
+  TestEQ(9, GetColumnAfterText("\t", 5, 4));
+  TestEQ(6, GetColumnAfterText("\ta\t\na\ta", 2, 4));
+
+  TestEQ("    a\n    a\n", ExpandTabs("\ta\n\ta\n", 1, 4));
+  TestEQ("   a\n    a\n", ExpandTabs("\ta\n\ta\n", 2, 4));
+  TestEQ("  a\n    a\n", ExpandTabs("\ta\n\ta\n", 3, 4));
+  TestEQ(" a\n    a\n", ExpandTabs("\ta\n\ta\n", 4, 4));
+  TestEQ("    a\n    a\n", ExpandTabs("\ta\n\ta\n", 5, 4));
+  TestEQ("→___a\n→___a\n", ExpandTabs("\ta\n\ta\n", 5, 4, [ fordebugdisplay := TRUE ]));
+}
+
+RunTestFramework([ PTR TestTabHandling
+                 , PTR TestSearchFirstElement
+                 ],
+                 [ usedatabase := FALSE
+                 ]);

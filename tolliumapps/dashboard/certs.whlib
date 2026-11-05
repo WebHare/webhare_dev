@@ -1,0 +1,74 @@
+<?wh
+
+LOADLIB "wh::crypto.whlib";
+LOADLIB "wh::files.whlib";
+LOADLIB "wh::filetypes/pkcs.whlib";
+
+LOADLIB "mod::publisher/lib/siteapi.whlib";
+LOADLIB "mod::system/lib/screenbase.whlib";
+
+STRING FUNCTION CreateWebhareDNHash(STRING readablename)
+{
+  RETURN ToLowercase(EncodeBase16(GetSHA1Hash(readablename)));
+}
+
+PUBLIC STATIC OBJECTTYPE Certs EXTEND DashboardPanelBase <
+  MACRO NEW() {
+  }
+  MACRO UploadCert(OBJECT work, OBJECT keystore, STRING filename, BLOB data)
+  {
+    RECORD pemstuff := DecodePEMFile(BlobToString(data));
+    this->HandleCert(work, keystore, filename, pemstuff);
+  }
+  MACRO HandleCert(OBJECT work, OBJECT keystore, STRING filename, RECORD data)
+  {
+    IF(data.type="multiple")
+    {
+      FOREVERY(RECORD part FROM data.parts)
+        this->HandleCert(work, keystore, filename, part);
+      RETURN;
+    }
+    IF(data.type="certificate")
+    {
+      IF( (SELECT AS STRING value FROM data.subjectfields WHERE fieldname="C") = ""
+          AND (SELECT AS STRING value FROM data.subjectfields WHERE fieldname="O")  = "")
+      {
+        work->AddWarning("Ignoring certificate for " || EncodeJSON(data.subject));
+        RETURN;
+      }
+      STRING nicename := data.subject;
+      Print("Processing " || EncodeJSON(nicename) || "\n");
+      STRING certhash := CreateWebHareDNHash(nicename);
+
+      RECORD certdata := [ name := certhash || ".pem"
+                         , title := nicename
+                         , data := StringToBlob(EncodeRawPEMFile("CERTIFICATE", data.rawsource))
+                         , publish := TRUE
+                         ];
+
+      OBJECT currentcert := keystore->OpenByName(certhash || ".pem");
+      IF(ObjectExists(currentcert))
+      {
+        //FIXME block replacement if existing cert is newer!
+        currentcert->UpdateMetadata(certdata);
+        work->AddWarning("Updating certificate for " || nicename || "\n");
+      }
+      ELSE
+      {
+        keystore->CreateFile(certdata);
+        work->AddWarning("Creating certificate for " || nicename || "\n");
+      }
+    }
+  }
+
+  MACRO DoUploadKeys(RECORD ARRAY files)
+  {
+    OBJECT work := this->BeginWork();
+    OBJECT mediafolder := OpenSiteByName("www.webhare.dev")->OpenByPath("media");
+    OBJECT keystore := mediafolder->EnsureFolder([ name := "certificatestore"
+                                                      ]);
+    FOREVERY(RECORD file FROM files)
+      this->UploadCert(work, keystore, file.filename, file.data);
+    work->Finish();
+  }
+>;

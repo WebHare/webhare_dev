@@ -1,0 +1,12 @@
+[component setwebhare]
+  <p>The my.webhare.dev is intended to share generic links to the WebHare backend or its test pages.</p>
+  <p>If you land here after following such a link, enter your backend URL below to allow my.webhare.dev links to redirect to <b>your</b> WebHare.</p>
+  <p>&nbsp;</p>
+  <form method="post" action="[feedbackurl]">
+    Your WebHare URL: <input name="webharelocation" value="[webharelocation]" required="true" style="width:300px" type="url" /><br/>
+    <button type="submit" style="border:1px solid black">Set it</button>
+  </form>
+  <p>&nbsp;</p>
+  <p>To update this redirect just visit <a href="https://my.webhare.dev/">https://my.webhare.dev/</a> directly.</p>
+  <p>To build your own my.webhare.dev link just replace your WebHare backend hostname with my.webhare.dev in any link. Eg, <a href="https://my.webhare.dev/?app=publisher">https://my.webhare.dev/?app=publisher</a> would link to your local WebHare Publisher application</p>
+[/component]

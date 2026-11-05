@@ -1,0 +1,34 @@
+<?wh
+
+LOADLIB "mod::tollium/lib/componentbase.whlib";
+
+PUBLIC STATIC OBJECTTYPE DevLink EXTEND TolliumLinkHandlerBase
+<
+  OBJECT link;
+
+  UPDATE PUBLIC OBJECT ARRAY FUNCTION CreateComponents(OBJECT screen)
+  {
+    this->link := screen->CreateTolliumComponent("textedit");
+    this->link->title := "Devlink";
+    RETURN [ this->link ];
+  }
+
+  UPDATE PUBLIC MACRO DestroyComponents()
+  {
+    this->link->DeleteComponent();
+  }
+
+  UPDATE PUBLIC BOOLEAN FUNCTION TrySetValue(OBJECT rte, STRING inlink)
+  {
+    IF(inlink NOT LIKE "x-devlink:*")
+      RETURN FALSE;
+
+    this->link->value := Substring(inlink, 10);
+    RETURN TRUE;
+  }
+
+  UPDATE PUBLIC STRING FUNCTION GetValue(OBJECT rte)
+  {
+    RETURN "x-devlink:" || this->link->value;
+  }
+>;

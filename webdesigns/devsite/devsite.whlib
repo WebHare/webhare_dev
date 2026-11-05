@@ -1,0 +1,493 @@
+<?wh
+
+LOADLIB "wh::files.whlib";
+LOADLIB "wh::internet/urls.whlib";
+LOADLIB "wh::util/langspecific.whlib";
+
+LOADLIB "mod::publisher/lib/publisher.whlib";
+LOADLIB "mod::publisher/lib/webdesign.whlib";
+LOADLIB "mod::system/lib/cache.whlib";
+LOADLIB "mod::system/lib/database.whlib";
+LOADLIB "mod::system/lib/whfs.whlib";
+
+LOADLIB "mod::webhare_dev/lib/devsite/structure.whlib";
+
+LOADLIB "mod::webhare_dev/lib/internal/devuploadfs.whlib";
+LOADLIB "mod::webhare_dev/webdesigns/devsite/shared/support.whlib";
+LOADLIB "mod::webhare_dev/webdesigns/devsite/pages/errorpage/errorpage.whlib";
+
+PUBLIC STATIC OBJECTTYPE DevSiteWebsite EXTEND WebDesignBase
+<
+  OBJECT rootfolder;
+  INTEGER ARRAY folder_tree;
+  RECORD sitesettings;
+
+  RECORD manualfolder;
+  OBJECT manualtype;
+
+  OBJECT rtdtype;
+  OBJECT markdowntype;
+
+  OBJECT reference_fs;
+  STRING reference_root;
+  PUBLIC STRING reference_upload;
+
+  MACRO NEW()
+  {
+    this->rtdtype        := OpenWHFSType("http://www.webhare.net/xmlns/publisher/richdocumentfile");
+    this->markdowntype   := OpenWHFSType("http://www.webhare.net/xmlns/publisher/markdownfile");
+    this->folder_tree    := GetFolderTreeIDs(this->targetfolder->id);
+    this->rootfolder     := OpenWHFSObject(this->targetsite->root);
+
+    this->sitesettings     := this->rootfolder->GetInstanceData("http://www.webhare.dev/xmlns/site");
+
+    //Check if we are inside a manual folder
+    this->manualtype := OpenWHFSType("http://www.webhare.dev/xmlns/foldertypes/manual");
+    this->manualfolder := SELECT * FROM system.fs_objects WHERE id IN this->folder_tree AND type = this->manualtype->id;
+
+    this->reference_upload := "master";
+    OBJECT reference := this->rootfolder->OpenByPath("reference");
+    this->reference_root := ObjectExists(reference) ? reference->link : "";
+
+    INSERT CELL name := this->rootfolder->name INTO this->jssiteconfig;
+    INSErt "wh-optin-authormode" INTO this->htmlclasses AT END;
+
+    INSERT CELL id := this->targetobject->id INTO this->jsobjconfig;
+    INSERT CELL parent := this->targetobject->parent INTO this->jsobjconfig;
+    INSERT CELL pageurl  := this->targetobject->indexurl INTO this->jsobjconfig;
+  }
+
+  UPDATE PUBLIC MACRO PrepareErrorPage(INTEGER errorcode, RECORD harescriptinfo, STRING url)
+  {
+    IF (errorcode = 404)
+    {
+      RECORD errorpage := GenerateErrorPage(this, errorcode, url);
+
+      this->pagetitle   := errorpage.title;
+      this->contentbody := errorpage.content;
+    }
+    ELSE
+      WebDesignBase::PrepareErrorPage(errorcode,harescriptinfo,url);
+  }
+
+  UPDATE PUBLIC RECORD FUNCTION GetPageConfig()
+  {
+    RECORD pagesettings := this->targetobject->GetInstanceData("http://www.webhare.dev/xmlns/page");
+
+    BOOLEAN isindex := this->targetfolder->indexdoc = this->targetobject->id;
+    //FIXME ABORT(isindex) putting this here and doing a live preview trigers HSVM_CloseFunctionCall2: orgstackpointer is higher than current stackpointer
+
+    //Get  just basic prev/next page within same folder
+    RECORD previouspage;
+    RECORD nextpage;
+    IF( Length(this->folder_tree) > 1)
+    {
+      RECORD ARRAY files := this->GetFolderItems( this->targetfolder->id, TRUE, RecordExists(this->manualfolder) );
+      IF( Length(files) > 0 )
+      {
+        IF( this->targetfolder->indexdoc = this->targetobject->id AND files[0].id != this->targetobject->id )
+          nextpage := files[0];
+        ELSE
+        {
+          FOREVERY( RECORD file FROM files )
+          {
+            IF( file.isselected )
+            {
+              IF( #file > 0 )
+                previouspage := files[#file - 1];
+              IF( #file < Length(files) - 1 )
+                nextpage := files[#file + 1];
+              BREAK;
+            }
+          }
+        }
+      }
+    }
+
+
+    IF( RecordExists(this->manualfolder) AND ( NOT RecordExists(previouspage) OR NOT RecordExists(nextpage)) )
+    {
+      //Then get prev/nextpage in the tree within the manual
+      IF( NOT RecordExists(previouspage) )
+        previouspage := GetPreviousPage( this->targetfolder->id, this->targetobject->id, this->manualfolder.fullpath );
+
+      IF( NOT RecordExists(nextpage) )
+        nextpage := GetNextPage( this->targetfolder->id, this->targetobject->id, this->manualfolder.fullpath );
+    }
+
+    //Setup SEO title
+    STRING sitetitle := this->rootfolder->title ?? this->rootfolder->name;
+    STRING objtitle := this->targetobject->title;
+    IF( objtitle = "" AND this->rootfolder->indexdoc != this->targetobject->id)
+      objtitle := this->targetfolder->title ?? this->targetfolder->name;
+
+    IF( pagesettings.seotitle != "" )
+      this->pagetitle := pagesettings.seotitle;
+    ELSE
+      this->pagetitle := ( objtitle != "" ? objtitle || " | " : "" ) || sitetitle;
+
+    BLOB cookiemsg := this->GetCookieMessage();
+
+    INTEGER rfid := Length(this->folder_tree) > 1 ? this->folder_tree[1] : 0;
+
+
+    RECORD pageconfig := [ sitename        := this->rootfolder->name // = name consilio catelog
+                         , sitetitle       := sitetitle
+                         , mainnav         := this->GetMainNav( NOT RecordExists(this->manualfolder) )
+                         , pathnav         := this->GetPathNav()
+                         , footernav       := this->GetFooterNav()
+                         , previouspage    := previouspage
+                         , nextpage        := nextpage
+                         , ismanual        := RecordExists(this->manualfolder)
+                         , manual_title    := RecordExists(this->manualfolder) ? this->manualfolder.title : ""
+
+                         , contenttitle    := this->targetobject->type = 24 ? this->targetobject->title : ""
+
+                         , logo_title      := this->sitesettings.logo_title
+                         , logo_subtitle   := this->sitesettings.logo_subtitle
+
+                         , sidenav         := this->GetSideNav( RecordExists(this->manualfolder) ? this->manualfolder.id : rfid )
+                         , summary         := NOT RecordExists(this->manualfolder) ? this->GetSummary() : DEFAULT RECORD
+
+                         , searchpageurl   := this->GetSearchPageUrl()
+                         , cookiemsg       := Length(cookiemsg) > 0 ? PTR SendBlobTo(0, cookiemsg) : DEFAULT MACRO PTR
+                         ];
+
+    //Try to get a share image
+    STRING shareimageurl := RecordExists(pagesettings.image) ? GetScaledImage( pagesettings.image, 630, this->targetsite->webroot ).link : '';
+
+    IF( RecordExists(this->manualfolder) )
+      INSERT "manual" INTO this->htmlclasses AT END;
+
+    RETURN pageconfig;
+  }
+
+
+  UPDATE PUBLIC STRING FUNCTION RewriteHyperlink(STRING href)
+  {
+    IF (href LIKE "x-doclink:*")
+    {
+      STRING id := Substring(href, 10);
+      RECORD ARRAY symbolmatches := LookupIdentifier(id, CELL[ fs := this->GetReferenceFS(), publiconly := TRUE ]);
+
+      IF (Length(symbolmatches) = 1)
+        RETURN this->reference_root || symbolmatches[0].referencelink;
+      ELSE
+      {
+        this->AddPublicationWarning(`Couldn't resolve identifier '${id}' into a unique reference`);
+        RETURN "";
+      }
+    }
+    RETURN WebDesignBase::RewriteHyperlink(href);
+  }
+
+  RECORD ARRAY FUNCTION GetPathNav()
+  {
+    RECORD ARRAY items;
+
+    IF( this->rootfolder->indexdoc = this->targetobject->id ) //Homepage
+      RETURN items;
+
+    FOREVERY(INTEGER folderid FROM this->folder_tree)
+    {
+      RECORD item := SELECT title
+                          , name
+                          , link := url
+                          , indexdoc
+                          , id
+                          , isselected := indexdoc = this->targetobject->id
+                       FROM system.fs_objects
+                      WHERE id = folderid
+                        AND id != this->targetsite->root
+                        AND indexurl != '';
+      IF(RecordExists(item))
+      {
+        IF(item.title = '')
+          item.title := SELECT AS STRING title FROM system.fs_objects WHERE id = item.indexdoc;
+        IF(item.title = '')
+          item.title := item.name;//indexfile has no title, then use foldername
+        INSERT item INTO items AT END;
+      }
+    }
+
+    IF(this->targetobject->title != '' AND ( (this->targetfolder->indexdoc != this->targetobject->id) OR (Length(items) > 0 AND items[Length(items) - 1].indexdoc != this->targetobject->id) ) )
+    {
+      INSERT [ title      := this->targetobject->title
+             , name       := this->targetobject->name
+             , link       := this->targetobject->url
+             , indexdoc   := 0
+             , id         := this->targetobject->id
+             , isselected := TRUE
+             ] INTO items AT END;
+    }
+
+    INSERT [ title      := "Home"
+           , name       := "home"
+           , link       := this->rootfolder->url
+           , indexdoc   := 0
+           , id         := this->rootfolder->indexdoc
+           , isselected := this->rootfolder->indexdoc = this->targetobject->id
+           ] INTO items AT 0;
+
+    RETURN (SELECT *, position := #items + 1 FROM items ORDER BY #items);
+  }
+
+  PUBLIC OBJECT FUNCTION GetReferenceFS()
+  {
+    IF (NOT ObjectExists(this->reference_fs))
+      this->reference_fs := NEW DevFileSystem();
+    RETURN this->reference_fs;
+  }
+
+  STRING FUNCTION GetSearchPageUrl()
+  {
+    RETURN ( SELECT AS STRING indexurl
+               FROM system.fs_objects
+              WHERE parentsite = this->targetobject->parentsite
+                AND title != ""
+                AND type = OpenWHFSType("http://www.webhare.dev/xmlns/filetypes/search")->id
+           );
+  }
+
+  BLOB FUNCTION GetCookieMessage()
+  {
+    RETURN GetAdhocCached([ siteid := this->targetsite->id, fn := "GetCookieMessage" ], PTR this->GetCookieMessageCached() );
+  }
+
+  RECORD FUNCTION GetCookieMessageCached()
+  {
+    RETURN [ value := RecordExists( this->sitesettings.cookiemsg) ? GetPrintedAsBlob(PTR this->OpenRTD( this->sitesettings.cookiemsg )->RenderAllObjects()) : DEFAULT BLOB
+           , eventmasks := [ "system:whfs.folder." || ToString(this->targetsite->root) ]
+           , ttl := 3600 * 24 * 1000 // 1 day
+           ];
+  }
+
+  MACRO SetShareImage(STRING shareimageurl)
+  {
+    IF(shareimageurl NOT LIKE 'http*')
+      shareimageurl := ResolveToAbsoluteURL(this->targetsite->webroot, shareimageurl);
+    this->GetPlugin("http://www.webhare.net/xmlns/socialite","opengraph")->ogproperties.image := shareimageurl;
+  }
+
+  RECORD FUNCTION GetSummary()
+  {
+    RECORD ARRAY items;
+
+    /*  List of files in folder and manuals folders
+        Not in root or main folder index EXCEPT main folder for cases
+    */
+    BOOLEAN subnavassummary := this->targetobject->type = 24 OR this->targetfolder->GetInstanceData("http://www.webhare.dev/xmlns/folder").subnavassummary;
+
+    IF( (this->targetfolder->indexdoc = this->targetobject->id OR this->targetobject->type = 24 ) AND ( Length(this->folder_tree) > 2 OR subnavassummary ) )
+    {
+      items := SELECT *
+                    , dateformatted := ""
+                    , subitems := type = this->manualtype->id ? this->GetFolderItems( id, TRUE, TRUE ) : DEFAULT RECORD ARRAY
+                 FROM this->GetFolderItems( this->targetfolder->id, TRUE, TRUE )
+                WHERE id != this->targetfolder->indexdoc
+                  AND (type = this->rtdtype->id OR type = this->markdowntype->id OR type = 19 OR type = this->manualtype->id); //Only rtd or internal links and manual folders
+
+      //internal link, then set id to linked file so we get instancedata from linked file when using enrich
+      UPDATE items SET id := filelink WHERE type = 19 AND filelink > 0;
+
+      items := OpenWHFSType("http://www.webhare.dev/xmlns/page")->Enrich(items, "id", ["image", "date"]);
+      items := SELECT *
+                    , showsubitems := type = this->manualtype->id
+                    , imagelink1x := GetCachedImageLink( image, image_resizespecs.summarythumb1x )
+                    , imagelink2x := GetCachedImageLink( image, image_resizespecs.summarythumb2x )
+                    , bgcolor := RecordExists(image) ? image.dominantcolor : ""
+                FROM items;
+    }
+
+    RETURN Length( items ) > 0 ? [ items := items] : DEFAULT RECORD;
+  }
+
+  RECORD FUNCTION GetSideNav( INTEGER foldertreebaseid )
+  {
+    IF( foldertreebaseid > 0 )
+    {
+      IF( OpenWHFSType("http://www.webhare.dev/xmlns/folder")->GetInstanceData(foldertreebaseid).subnavassummary )
+        RETURN DEFAULT RECORD ARRAY;
+
+      RECORD basefolder := SELECT * FROM system.fs_objects WHERE id = foldertreebaseid;
+
+      RECORD ARRAY navitems := this->GetFolderItemsRecursive( basefolder, TRUE, TRUE, 0);
+      IF( Length(navitems) = 0 )
+        RETURN DEFAULT RECORD;
+
+      RECORD ARRAY items := [[ title := basefolder.title
+                             , type  := "tree"
+                             , items := navitems
+                            ]];
+
+      RETURN [ items          := items
+             , istree         := TRUE
+             ];
+    }
+    ELSE
+      IF( this->targetobject->id = this->targetfolder->indexdoc OR this->targetobject->type NOT IN INTEGER[ this->rtdtype->id,this->markdowntype->id] )
+        RETURN DEFAULT RECORD;//No index and must be a rtd
+
+    RETURN DEFAULT RECORD;
+  }
+
+  RECORD ARRAY FUNCTION GetFooterNav()
+  {
+    RECORD ARRAY items;
+
+    FOREVERY( RECORD navitem FROM this->sitesettings.footernav )
+    {
+      STRING link := GetIntextLinkTarget( navitem.link );
+      IF( link != "" )
+      {
+        STRING title := navitem.title;
+        IF( title = "" AND navitem.link.internallink > 0 )
+          title := SELECT AS STRING (fs_objects.title ?? fs_objects.name ) FROM system.fs_objects WHERE id = navitem.link.internallink;
+
+        IF( title = "" )
+          title := navitem.link;
+
+        INSERT [ url := link, title := title ] INTO items AT END;
+      }
+    }
+
+    RETURN items;
+  }
+
+
+  RECORD FUNCTION GetMainNav( BOOLEAN showrfnav )
+  {
+    RECORD mainnav := [ items := DEFAULT RECORD ARRAY
+                      , activesection := DEFAULT RECORD
+                      ];
+
+    mainnav.items := SELECT *
+                          , isselected := id IN this->folder_tree OR id = this->targetobject->id
+                          , items := DEFAULT RECORD ARRAY
+                          //, indexactive := indexdoc = this->targetobject->id AND this->targetobject->title = ""
+                       FROM system.fs_objects
+                      WHERE parent = this->rootfolder->id
+                        AND indexurl != ""
+                        AND title != ""
+                        AND ( isfolder /* OR id = this->rootfolder->indexdoc */ OR name = "reference")
+                   ORDER BY id != this->rootfolder->indexdoc, ordering, ToUpperCase(title), name; //home always first
+
+    OBJECT folderinstancetype := OpenWHFSType("http://www.webhare.dev/xmlns/folder");
+    FOREVERY( RECORD item FROM mainnav.items )
+    {
+      IF(item.isfolder )
+      {
+        RECORD ARRAY items := this->GetFolderItems(item.id, TRUE, TRUE);
+        IF( Length(items) = 1 )
+          DELETE FROM items WHERE item.indexdoc = id; // If only index in subitems then ignore this index file
+        mainnav.items[#item].items := items;
+      }
+    }
+
+    IF( showrfnav )
+      mainnav.activesection := SELECT * FROM mainnav.items WHERE isselected;
+
+    //Don't show main item but if active do show subnav of active section
+    mainnav.items := folderinstancetype->Enrich(mainnav.items, "id",["hideformainnav"]);
+    DELETE FROM mainnav.items WHERE hideformainnav;
+
+    RETURN mainnav;
+  }
+
+
+  /****************************
+   *   Helper functions
+   ****************************/
+
+  RECORD ARRAY FUNCTION GetFolderItems(INTEGER folderid, BOOLEAN showfiles, BOOLEAN showfolders)
+  {
+    RECORD ARRAY items := SELECT *
+                               , isselected := id = this->targetobject->id OR id IN this->folder_tree
+                            FROM system.fs_objects
+                           WHERE parent = folderid
+                             AND indexurl != ""
+                             AND title != ""
+                             AND ( (showfolders AND isfolder) OR (showfiles AND NOT isfolder) )
+                            ORDER BY ordering, ToUpperCase(title), name;
+    RETURN (SELECT *, nr := #items + 1 FROM items);
+  }
+
+  RECORD ARRAY FUNCTION GetFolderItemsRecursive(RECORD basefolder, BOOLEAN showfiles, BOOLEAN showfolders, INTEGER level)
+  {
+    RECORD ARRAY folderlist;// := this->GetFolderItems(basefolder.id, showfiles, showfolders);
+
+    //If manual folder, then only deeper levels if manual folder on level 0
+    IF( level = 0 OR basefolder.type != this->manualtype->id )
+      folderlist := this->GetFolderItems(basefolder.id, showfiles, showfolders);
+
+    INTEGER manualfolderid := RecordExists(this->manualfolder) ? this->manualfolder.id : 0;
+    IF( basefolder.id != manualfolderid )
+      DELETE FROM folderlist WHERE id = basefolder.indexdoc;//don't show index in list
+
+    RECORD ARRAY items := SELECT *
+                               , items := isfolder ? this->GetFolderItemsRecursive(folderlist, showfiles, showfolders, level + 1) : ( type = this->rtdtype->id OR type = this->markdowntype->id ? this->GetDeeplinks(id, parent) : DEFAULT RECORD ARRAY )
+                            FROM folderlist;
+    RETURN items;
+  }
+
+  RECORD ARRAY FUNCTION GetDeeplinks( INTEGER fileid, INTEGER folderid )
+  {
+    RETURN GetAdhocCached([ fileid := fileid ], PTR this->GetDeeplinksCached( fileid, folderid ) );
+  }
+
+  RECORD ARRAY FUNCTION GetAnchorsForFile(INTEGER fileid)
+  {
+    OBJECT infile := OpenWHFSObject(fileid);
+    OBJECT rtd := this->OpenRTDFromFile(infile);
+    OBJECT ARRAY anchors := rtd->body->GetElements("h1,h2");
+    RETURN SELECT TEMPORARY anchor := GetSafeName(node->textcontent, [ utf8 := TRUE, fallback := "anchor" ])
+                , title := node->textcontent
+                , anchor := anchor
+                , link := infile->indexurl != "" ? infile->indexurl || "#" || anchor : ""
+             FROM ToRecordArray(anchors, "node");
+  }
+
+  RECORD FUNCTION GetDeeplinksCached( INTEGER fileid, INTEGER folderid )
+  {
+    RETURN [ value := ( SELECT *, items := RECORD[], url := link, isselected := FALSE, id := 0 FROM this->GetAnchorsForFile(fileid) )
+           , eventmasks := [ "system:whfs.folder." || ToString(folderid) ]
+           , ttl := 3600 * 1000 // 1 hour
+           ];
+  }
+
+  RECORD FUNCTION GetFolderTypeItemsCached( INTEGER siteid, STRING foldertypens )
+  {
+    RECORD ARRAY items;
+    INTEGER folderid;
+
+    RECORD itemsfolder := SELECT *
+                            FROM system.fs_objects
+                           WHERE type = OpenWHFSType( foldertypens )->id
+                             AND parentsite = siteid;
+    IF(  RecordExists(itemsfolder) )
+    {
+      folderid := itemsfolder.id;
+      items := this->GetFolderItems( folderid, TRUE, FALSE);
+
+      items := SELECT title
+                    , url
+                    , id := filelink > 0 AND type = 19 ? filelink : id //set filelink if set so enrichment uses linked file
+                    , orginal_id := id
+                    , tag := GetSafeFileName(title)
+                    , ordering
+                    , description
+                    , creationdate
+                    , modificationdate
+                    , dateformatted := ""
+                 FROM items
+                WHERE itemsfolder.indexdoc != id // Ignore index
+                  AND ( type = this->rtdtype->id OR type = this->markdowntype->id OR type = 18 OR type = 19 );//only rtd or links
+    }
+
+    RETURN [ value := items
+           , eventmasks := [ "system:whfs.folder." || ToString(folderid) ]
+           , ttl := 3600 * 24 * 1000 // 1 day
+           ];
+  }
+
+>;

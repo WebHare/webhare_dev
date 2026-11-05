@@ -1,0 +1,67 @@
+[component header]
+  <header class="navheader">
+    <div class="centercontainer">
+      <a href="[siteroot]" class="logo">
+        <span class="icon"></span>
+        <span class="title">
+          [logo_title]
+          [if logo_subtitle]<small>[logo_subtitle]</small>[/if]
+        </span>
+      </a>
+
+      <div id="menuwrapper">
+
+        [if ismanual][if sidenav]
+          <div class="contentmenu-toggle">
+            <span class="icon"></span>
+          </div>
+        [/if][/if]
+
+        <div class="mobilemenu-toggle">
+          <span class="icon"></span>
+        </div>
+
+        <div id="menuwrapper__scrollcontainer">
+          [if searchpageurl]
+            <form method="get" id="topsearchform" action="[searchpageurl]">
+              <input name="words" type="search" value="" placeholder="[gettid webdesigns.devsite.frontend.search.placeholder]" data-suggest="{&#34;catalog&#34;:&#34;[sitename:java]&#34;}" />
+              <button class="far fa-search" type="submit" title="[gettid webdesigns.devsite.frontend.search.button]"></button>
+              <span class="close fal fa-times"></span>
+            </form>
+          [/if]
+
+          <nav id="mainnav">
+            <ul>
+              [forevery mainnav.items]
+                <li class="[if isselected]active[/if] [if items]haschildren [if isselected]showchildren[/if][/if]">
+                  <a href="[url]">
+                    [if items]
+                      <span class="arrows">
+                        <span class="fa fa-angle-right"></span> [! mobile nav arrow !]
+                      </span>
+                    [/if]
+                    [title]
+                  </a>
+                  [if items]
+                    <div class="children">
+                      <div class="centercontainer">
+                        <ul>
+                          [forevery items]
+                            <li [if isselected]class="active"[/if]>
+                              <a href="[url]" title="[title]">[title]</a>
+                            </li>
+                          [/forevery]
+                        </ul>
+                      </div>
+                    </div>
+                  [/if]
+                </li>
+              [/forevery]
+            </ul>
+          </nav>
+        </div>
+      </div>
+
+    </div>
+  </header>
+[/component]

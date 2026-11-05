@@ -1,0 +1,8 @@
+<siteprofile xmlns="http://www.webhare.net/xmlns/publisher/siteprofile">
+
+  <!-- resources folder -->
+  <foldertype namespace="http://www.webhare.dev/xmlns/folders/resources"
+              title="Resources"
+              tolliumicon="tollium:folders/repository" />
+
+</siteprofile>

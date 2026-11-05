@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema
+  xmlns:xs="http://www.w3.org/2001/XMLSchema"
+  xmlns:t="http://www.webhare.net/xmlns/tollium/screens"
+  xmlns:tc="http://www.webhare.net/xmlns/tollium/common"
+  xmlns="http://www.webhare.dev/xmlns/components"
+  targetNamespace="http://www.webhare.dev/xmlns/components"
+  elementFormDefault="qualified"
+  xml:lang="en">
+
+  <xs:import namespace="http://www.webhare.net/xmlns/tollium/screens" schemaLocation="mod::tollium/data/screens.xsd" />
+  <xs:import namespace="http://www.webhare.net/xmlns/tollium/common" schemaLocation="mod::tollium/data/common.xsd" />
+
+  <xs:element name="devlink">
+    <xs:complexType>
+      <xs:annotation>
+        <xs:appinfo>
+          <t:tolliumcomponent placement="inline" objecttype="../lib/components/links.whlib#DevLink" />
+        </xs:appinfo>
+      </xs:annotation>
+      <xs:attributeGroup ref="tc:ComponentBase" />
+    </xs:complexType>
+  </xs:element>
+
+</xs:schema>

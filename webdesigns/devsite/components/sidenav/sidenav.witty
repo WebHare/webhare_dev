@@ -1,0 +1,60 @@
+[component basicsidenav]
+  <nav id="basicsidenav">
+    [forevery items]
+      <ul>
+        [forevery items]
+          <li class="[if isselected]active[/if]" >
+            <a href="[url]" class="item">[title]</a>
+            [if istree]
+              [embed treeitems]
+            [/if]
+          </li>
+        [/forevery]
+      </ul>
+    [/forevery]
+  </nav>
+[/component]
+
+
+[component manualsidenav]
+  <div id="manualsidenav">
+    <div class="contentlistheader-mobile">
+      [gettid webdesigns.devsite.frontend.contentlistheader]
+      <div class="contentmenu-toggle"><i class="fal fa-times"></i></div>
+    </div>
+
+    [if manual_title]
+      <div class="manual-title">[manual_title]</div>
+    [/if]
+
+    <input type="search" placeholder="[gettid webdesigns.devsite.frontend.filtertitles]" id="filter-contenlist" name="filter-contenlist" value="" />
+
+    <nav id="sidenav">
+      [forevery items]
+        <ul [if type]class="[type]"[/if]>
+          [forevery items]
+            <li class="[if isselected]active[/if] [if not id]deeplink[/if]" [if id]data-id="[id]"[/if]>
+              <a href="[url]" class="item">[title]</a>
+              [if istree]
+                [embed treeitems]
+              [/if]
+            </li>
+          [/forevery]
+        </ul>
+      [/forevery]
+    </nav>
+  </div>
+[/component]
+
+[component treeitems]
+  [if items]
+    <ul>
+      [forevery items]
+        <li class="[if isselected]active[/if] [if not id]deeplink[/if]" [if id]data-id="[id]"[/if]>
+          <a href="[url]" class="item">[title]</a>
+          [embed treeitems]
+        </li>
+      [/forevery]
+    </ul>
+  [/if]
+[/component]

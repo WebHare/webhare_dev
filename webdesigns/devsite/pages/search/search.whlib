@@ -1,0 +1,178 @@
+<?wh
+LOADLIB "mod::consilio/lib/api.whlib";
+LOADLIB "wh::witty.whlib";
+LOADLIB "mod::system/lib/cache.whlib";
+LOADLIB "mod::system/lib/database.whlib";
+LOADLIB "mod::system/lib/webserver/pagebase.whlib";
+LOADLIB "mod::system/lib/webserver.whlib";
+LOADLIB "mod::system/lib/whfs.whlib";
+LOADLIB "mod::tollium/lib/gettid.whlib";
+
+LOADLIB "mod::webhare_dev/webdesigns/devsite/shared/support.whlib";
+
+INTEGER maxresults := 12;
+INTEGER maxinsection := 3;
+
+PUBLIC OBJECTTYPE SearchDesign EXTEND DynamicWebPageBase
+<
+  RECORD section;
+  INTEGER pagenr;
+  STRING restrict_url;
+  RECORD reffolder;
+
+  UPDATE PUBLIC MACRO PrepareForRendering(OBJECT webdesign)
+  {
+    STRING referer := GetWebHeader("Referer");
+
+    IF( referer LIKE webdesign->targetsite->webroot || "*" )
+    {//other sections
+      STRING refpath := Right(referer, Length(referer) - Length(webdesign->targetsite->webroot) );
+      STRING ARRAY pathparts := Tokenize(refpath, "/");
+      IF( Length(pathparts) > 0 AND pathparts[0] != "")
+        this->reffolder := SELECT * FROM system.fs_objects WHERE parent = webdesign->targetsite->root
+                                                             AND name = pathparts[0]
+                                                             AND indexurl != ""
+                                                             AND title != "";
+    }
+
+    INSERT "search" INTO webdesign->htmlclasses AT END;
+
+    IF( GetWebVariable("section") != "" )
+    {
+      this->section := SELECT * FROM system.fs_objects WHERE parent = webdesign->targetsite->root
+                                                         AND ToUpperCase(fullpath) = ToUpperCase(GetWebVariable("section"))
+                                                         AND title != ""
+                                                         AND indexurl != "";
+
+      IF( RecordExists(this->section) )
+        this->restrict_url := this->section.indexurl;
+    }
+
+    this->pagenr := ToInteger( GetWebVariable("page"), 0);
+    IF( this->pagenr < 0 )
+      this->pagenr := 0;
+  }
+
+  UPDATE PUBLIC MACRO RunBody(OBJECT webdesign)
+  {
+    RECORD result;
+
+    IF( NOT RecordExists(this->section) )
+      result := this->DoSearch(webdesign, GetWebVariable("words"), 0, -1);
+    ELSE
+      result := this->DoSearch(webdesign, GetWebVariable("words"), 0, (this->pagenr + 1)*maxresults);
+
+    RECORD ARRAY sectionresults;
+
+    IF( NOT RecordExists(this->section) )
+    {
+      IF( RecordExists(this->reffolder) )
+      { //Results in section (from referer)
+        RECORD filteredresults := this->FilterForPath(webdesign, result.results, this->reffolder, maxinsection);
+        IF( RecordExists(filteredresults) )
+          INSERT filteredresults INTO sectionresults AT END;
+      }
+
+      //Filter other results
+      FOREVERY( RECORD sectionres FROM sectionresults )
+      {
+        INTEGER ARRAY hilightids := SELECT AS INTEGER ARRAY id FROM sectionres.summary;
+        DELETE FROM result.results WHERE id IN hilightids;
+      }
+
+      result.results := SELECT * FROM result.results LIMIT (this->pagenr + 1)*maxresults;
+    }
+
+    EmbedWittyComponent("mod::webhare_dev/webdesigns/devsite/pages/search/search.witty:searchresults", [ summary := result.results
+                                         , totalcount     := result.totalcount
+                                         , singleresult   := result.totalcount = 1
+                                         , sectionresults := sectionresults
+                                         , resultsstr     := GetTid('webhare_dev:webdesigns.devsite.frontend.search.nrofresults', ToString(result.totalcount), GetWebVariable("words"))
+                                         , more           := maxresults*(this->pagenr + 1) < result.totalcount
+                                         , title          := webdesign->targetobject->title
+                                         , words          := GetWebVariable("words")
+                                         , section        := this->section
+                                         ]);
+  }
+
+  RECORD FUNCTION FilterForPath(OBJECT webdesign, RECORD ARRAY allresults, RECORD filterbase, INTEGER maxitems)
+  {
+    IF( RecordExists(filterbase) )
+    {
+      IF( filterbase.title = "" )
+        RETURN DEFAULT RECORD;//only section with title
+
+      RECORD ARRAY results := SELECT * FROM allresults WHERE link LIKE filterbase.indexurl || "*";
+
+      IF( Length(results) > 0 )
+         RETURN [ title      := filterbase.title
+                , summary    := maxitems > 0 ? (SELECT * FROM results LIMIT maxitems) : results
+                , totalcount := Length(results)
+                , section    := filterbase.fullpath
+                , indexurl   := filterbase.indexurl
+                , id         := filterbase.id
+                , parent     := filterbase.parent
+                , more       := Length(results) > maxitems
+                ];
+    }
+
+    RETURN DEFAULT RECORD;
+  }
+
+  RECORD FUNCTION DoSearch(OBJECT webdesign, STRING words, INTEGER pageindex, INTEGER maxpp )
+  {
+    RECORD result := RunConsilioSearch("webhare_dev:www_webhare_dev", CQParseUserQuery(words), [ summary_length := 150, restrict_url := this->restrict_url, first := pageindex*maxresults, count := maxpp ]);
+
+    STRING notitle := GetTid('webhare_dev:webdesigns.devsite.frontend.search.notitle');
+
+    result.results := SELECT title          := title = '' ? notitle : title
+                           , description    := summary ?? CellExists(results,'_summary') ? results._summary : ""
+                           , link           := objectid
+                           , id             := ToInteger(groupid,0)
+                           , imageurl       := ""
+                           , imageurl2      := ""
+                           , bgcolor        := ""
+                           , filetype       := filetype != "html" ? filetype : ""
+                           , filesize       := ""
+                        FROM result.results;
+
+    FOREVERY(RECORD item FROM result.results)
+    {
+      RECORD file := SELECT * FROM system.fs_objects WHERE id = item.id;
+      IF( NOT RecordExists(file) )
+        CONTINUE;
+
+      IF( item.filetype != "" )
+        result.results[#item].filesize := FormatFileSize(Length(file.data));
+
+      IF( file.title = "" ) //if file is index and no title, use folder title / name
+        file.title := SELECT AS STRING title ?? name FROM system.fs_objects WHERE id = file.parent AND indexdoc = file.id;
+
+      //internal link, then set id/type to linked file so we get instancedata from linked file when using enrich
+      IF( file.type = 19 AND file.filelink > 0)
+        result.results[#item].id := file.filelink;//Used for enrichment, image
+
+      result.results[#item].title := file.title ?? file.name;
+    }
+
+    result.results := OpenWHFSType('http://www.webhare.dev/xmlns/page')->Enrich(result.results, "id", ["image"]);
+    UPDATE result.results
+       SET imageurl := GetCachedImageLink( image , [ method:="fill", setwidth := 155, setheight := 100 ])
+         , imageurl2 := GetCachedImageLink( image , [ method:="fill", setwidth := 310, setheight := 200 ])
+         , bgcolor := image.dominantcolor
+     WHERE RecordExists(image);
+
+    RETURN result;
+  }
+
+  PUBLIC RECORD FUNCTION WDS_GetSearchResults(OBJECT webcontext, STRING words, INTEGER pagenr DEFAULTSTO 0)
+  {
+    RECORD result := this->DoSearch(webcontext, words, pagenr, maxresults);
+    RETURN [ success    := TRUE
+           , totalcount := result.totalcount
+           , pagenr     := pagenr
+           , items      := (SELECT *, withthumb := (imageurl != '' ? 'withthumb' : '') FROM result.results)
+           , more       := maxresults*(pagenr + 1) < result.totalcount
+           ];
+  }
+>;

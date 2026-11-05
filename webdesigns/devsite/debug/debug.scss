@@ -1,0 +1,40 @@
+/* responsive layout overlay */
+@import "../shared/config";
+
+.layoutoverlay
+{
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 9999;
+  pointer-events: none;
+
+  &__columns
+  {
+    max-width: $maxcontentwidth + 2*$contentpadding;
+    width: 100%;
+    margin: 0 auto;
+    padding: 0 $contentpadding;
+    height: 100vh;
+    display: flex;
+    border-left: 1px dotted rgba(255,0,0,0.2);
+    border-right: 1px dotted rgba(255,0,0,0.2);
+
+    & .col
+    {
+      background-color: rgba(0,0,0,0.05);
+      border-left: 1px solid rgba(0,0,0,0.1);
+      border-right: 1px solid rgba(0,0,0,0.1);
+      height: 100vh;
+      flex-grow: 1;
+    }
+
+    & .gap
+    {
+      flex: none;
+      width: $gridgap;
+    }
+  }
+}

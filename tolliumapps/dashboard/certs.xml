@@ -1,0 +1,12 @@
+<screens xmlns="http://www.webhare.net/xmlns/tollium/screens"
+         library="certs.whlib">
+
+  <screen name="certs" title="">
+    <actions>
+      <uploadaction name="uploadkeys" onupload="douploadkeys" multiple="true" />
+    </actions>
+    <body>
+      <button action="uploadkeys" title="Upload keys" />
+    </body>
+  </screen>
+</screens>

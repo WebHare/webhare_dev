@@ -1,0 +1,28 @@
+image: docker:18-dind
+
+services:
+  - docker:dind
+
+variables:
+  GIT_SUBMODULE_STRATEGY: recursive
+  TESTFW_WEBHARE_ENABLE_DEVKIT: 1
+
+default:
+  before_script:
+    - ( which apk && apk add bash curl git openssh ) || true    # execute on alpine only
+  artifacts:
+    paths:
+      - artifacts
+    when: always
+    expire_in: 1 week
+    reports:
+      junit: artifacts/junit.xml
+  interruptible: true
+
+stages:
+  - test
+
+runtest-vs-main:
+  stage: test
+  script:
+    - curl -s https://build.webhare.dev/ci/scripts/testmodule.sh | bash -s -- -w main

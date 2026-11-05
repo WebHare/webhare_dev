@@ -1,0 +1,371 @@
+<siteprofile xmlns="http://www.webhare.net/xmlns/publisher/siteprofile"
+             xmlns:p="http://www.webhare.net/xmlns/publisher/components">
+
+  <!-- Global site settings -->
+  <apply>
+    <to type="all" />
+
+    <!-- Setup default webdesign -->
+    <webdesign assetpack="webhare_dev:devsite"
+               async="true"
+               contentnavstops="h2"
+               designfolder="."
+               maxcontentwidth="824px"
+               objectname="devsite.whlib#devsiteWebsite"
+               supportsaccessdenied="true"
+               witty="devsite.witty"
+               wittyencoding="HTML-NI" />
+
+    <!-- set default rtd type -->
+    <rtddoc rtdtype="http://www.webhare.dev/xmlns/rtd/manualstype" />
+
+    <!-- Set site language -->
+    <sitelanguage lang="en" />
+
+    <!-- Allow RTD documents -->
+    <allowfiletype typedef="http://www.webhare.net/xmlns/publisher/richdocumentfile" />
+    <urlhistory redirecton404="true" store="true" />
+
+    <!-- Disable the legacy site settings -->
+    <disablelegacysitesettings notemplateprofile="true" />
+
+    <!-- disable keywords field -->
+    <baseproperties keywords="false" />
+
+    <!-- Activate OpenGraph plugin, can be further initialized for specific files -->
+    <opengraph xmlns="http://www.webhare.net/xmlns/socialite" type="website" image="img/logo.png" site_name="WebHare bv" />
+    <robots xmlns="http://www.webhare.net/xmlns/consilio" />
+    <seotab xmlns="http://www.webhare.net/xmlns/socialite" features="robots canonicalurl" />
+
+    <!-- Republish all files in folder for submenu update -->
+    <republish indexonly="false" recursive="false" />
+
+    <!-- Default types -->
+    <denyfiletype typedef="*" />
+    <allowfiletype typedef="http://www.webhare.net/xmlns/publisher/externallink" />
+    <allowfiletype typedef="http://www.webhare.net/xmlns/publisher/internallink" />
+    <allowfiletype typedef="http://www.webhare.net/xmlns/publisher/richdocumentfile" />
+    <allowfiletype typedef="http://www.webhare.net/xmlns/publisher/markdownfile" />
+    <denyfoldertype typedef="*" />
+    <allowfoldertype typedef="http://www.webhare.net/xmlns/publisher/normalfolder" />
+    <allowfoldertype typedef="http://www.webhare.dev/xmlns/foldertypes/manual" />
+    <folderindex indexfile="newfile"
+                 newfilename="index"
+                 newfiletype="http://www.webhare.net/xmlns/publisher/richdocumentfile" />
+  </apply>
+
+  <apply minservertype="production">
+    <to type="all" />
+    <googleanalytics account="UA-12057153-1" anonymizeip="true" />
+  </apply>
+
+  <apply>
+    <testdata member="language" target="root" typedef="http://www.webhare.dev/xmlns/site" value="en" />
+    <sitelanguage lang="en" />
+  </apply>
+
+  <filetype namespace="http://www.webhare.dev/xmlns/referencerouter"
+            kind="virtualfile"
+            isacceptableindex="true"
+            capturesubpaths="true"
+            title="webhare.dev reference">
+    <dynamicexecution routerfunction="pages/reference/reference.whlib#ReferenceRouter"/>
+  </filetype>
+
+  <!-- Site settings -->
+  <contenttype namespace="http://www.webhare.dev/xmlns/site">
+    <string name="logo_title" />
+    <string name="logo_subtitle" />
+    <richdocument name="cookiemsg" />
+    <array name="socialmedia">
+      <string name="name" />
+      <string name="link" />
+    </array>
+    <whfsref name="siterepository" />
+    <array name="footernav">
+      <string name="title" />
+      <intextlink name="link" />
+    </array>
+  </contenttype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="sysopsitesettings">
+    <insert gid="webdesigns.devsite.backend.site" position="description" where="after">
+      <p:browseforobject composition="contentdata"
+                         cellname="siterepository"
+                         accepttypes="http://www.webhare.dev/xmlns/folders/resources" />
+    </insert>
+  </tabsextension>
+
+  <apply>
+    <to type="folder" pathmask="/" />
+    <extendproperties extension="#sysopsitesettings"
+                      contenttype="http://www.webhare.dev/xmlns/site"
+                      requireright="system:sysop" />
+  </apply>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="sitesettings">
+    <newtab gid="webdesigns.devsite.backend.site" tid=".logo">
+      <textedit composition="contentdata" cellname="logo_title" width="1pr" />
+      <textedit composition="contentdata" cellname="logo_subtitle" width="1pr" />
+    </newtab>
+    <newtab gid="webdesigns.devsite.backend.site" tid=".cookie">
+      <richdocument composition="contentdata"
+                    cellname="cookiemsg"
+                    width="1pr"
+                    height="1pr"
+                    minheight="150px"
+                    errorlabeltid=".cookiemsg"
+                    rtdtype="http://www.webhare.dev/xmlns/rtd/plain" />
+    </newtab>
+    <newtab gid="webdesigns.devsite.backend.site" tid=".socialmedia">
+      <arrayedit composition="contentdata"
+                 cellname="socialmedia"
+                 width="1pr"
+                 height="1pr"
+                 emptytid=".empty"
+                 orderable="true"
+                 roweditscreen=".editsocialmedia">
+        <column name="name" type="text" width="120px" />
+        <column name="link" type="text" width="1pr" />
+      </arrayedit>
+    </newtab>
+    <newtab gid="webdesigns.devsite.backend.site.footer" tid=".footer">
+      <box hr="false" tid=".footernav">
+        <arrayedit composition="contentdata"
+                   cellname="footernav"
+                   width="1pr"
+                   height="1pr"
+                   emptytid=".empty"
+                   orderable="true"
+                   roweditscreen=".editfooternav">
+          <column name="title" type="text" width="120px" />
+          <p:intextlinkcolumn name="link" width="2pr" />
+        </arrayedit>
+      </box>
+    </newtab>
+  </tabsextension>
+
+  <apply>
+    <to type="folder" pathmask="/" />
+    <extendproperties extension="#sitesettings" contenttype="http://www.webhare.dev/xmlns/site" />
+  </apply>
+
+  <screen xmlns="http://www.webhare.net/xmlns/tollium/screens"
+          name="editsocialmedia"
+          minwidth="350px"
+          gid="webdesigns.devsite.backend.site"
+          implementation="rowedit">
+    <compositions>
+      <record name="row" />
+    </compositions>
+
+    <body>
+      <box>
+        <select composition="row" cellname="name" type="pulldown" required="true" rowkeytype="string" tid=".socialmedia">
+          <option rowkey="" title="-" />
+          <option rowkey="facebook" />
+          <option rowkey="youtube" />
+          <option rowkey="twitter" />
+          <option rowkey="linkedin" />
+          <option rowkey="instagram" />
+          <option rowkey="vimeo" />
+        </select>
+        <textedit composition="row" cellname="link" width="1pr" required="true" validationchecks="url" />
+      </box>
+      <defaultformbuttons buttons="ok cancel" />
+    </body>
+  </screen>
+
+  <screen xmlns="http://www.webhare.net/xmlns/tollium/screens"
+          name="editfooternav"
+          minwidth="350px"
+          gid="webdesigns.devsite.backend.site.footer"
+          implementation="rowedit">
+    <compositions>
+      <record name="row" />
+    </compositions>
+
+    <body>
+      <box>
+        <textedit composition="row" cellname="title" width="1pr" />
+        <p:intextlink composition="row" cellname="link" required="true" />
+      </box>
+      <defaultformbuttons buttons="ok cancel" />
+    </body>
+  </screen>
+
+  <!-- All folders -->
+  <contenttype namespace="http://www.webhare.dev/xmlns/folder">
+    <boolean name="subnavassummary" />
+    <boolean name="hideformainnav" />
+  </contenttype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="foldersettings">
+    <insert gid="webdesigns.devsite.backend.page" position="description" where="after">
+      <checkbox composition="contentdata" cellname="subnavassummary" labeltid=".subnavassummary" title="" />
+    </insert>
+  </tabsextension>
+
+  <apply>
+    <and>
+      <to type="folder" />
+      <not>
+        <to type="folder" foldertype="http://www.webhare.net/xmlns/publisher/foreignfolder" />
+      </not>
+      <not>
+        <to type="folder" foldertype="http://www.webhare.dev/xmlns/foldertypes/manual" />
+      </not>
+      <not>
+        <to type="folder" pathmask="/" />
+      </not>
+      <not>
+        <to type="folder" pathmask="/media/*" />
+      </not>
+    </and>
+    <extendproperties extension="#foldersettings" contenttype="http://www.webhare.dev/xmlns/folder" />
+  </apply>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="rffoldersettings">
+    <insert gid="webdesigns.devsite.backend.page" position="description" where="after">
+      <checkbox composition="contentdata" cellname="hideformainnav" labeltid=".hideformainnav" title="" />
+    </insert>
+  </tabsextension>
+
+  <apply>
+    <and>
+      <to type="folder" pathmask="/*/" />
+      <not>
+        <to type="folder" foldertype="http://www.webhare.net/xmlns/publisher/foreignfolder" />
+      </not>
+      <not>
+        <to type="folder" pathmask="/" />
+      </not>
+      <not>
+        <to type="folder" pathmask="/*/*/" />
+      </not>
+      <not>
+        <to type="folder" pathmask="/media/*" />
+      </not>
+    </and>
+    <extendproperties extension="#rffoldersettings" contenttype="http://www.webhare.dev/xmlns/folder" />
+  </apply>
+
+  <!-- All rtd pages -->
+  <contenttype namespace="http://www.webhare.dev/xmlns/page">
+    <string name="seotitle" />
+    <file name="image" />
+    <datetime name="date" />
+  </contenttype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="pagesettings">
+    <insert gid="webdesigns.devsite.backend.page" position="title" where="after">
+      <textedit composition="contentdata" cellname="seotitle" width="1pr" />
+    </insert>
+  </tabsextension>
+
+  <apply>
+    <to type="file" filetype="http://www.webhare.net/xmlns/publisher/richdocumentfile" />
+    <extendproperties extension="#pagesettings" contenttype="http://www.webhare.dev/xmlns/page" />
+  </apply>
+
+  <!-- All pages -->
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="allpagessettings">
+    <newtab gid="webdesigns.devsite.backend.page" tid=".pageextra">
+      <box hr="false" tid=".image">
+        <imgedit composition="contentdata"
+                 cellname="image"
+                 name="image"
+                 width="660px"
+                 height="360px"
+                 allowedactions="all refpoint"
+                 errorlabeltid=".image"
+                 imagesetheight="360px"
+                 imagesetwidth="660px"
+                 publisher="false"
+                 title="" />
+        <text valuetid=".imagenote" />
+      </box>
+    </newtab>
+  </tabsextension>
+
+  <apply>
+    <and>
+      <to type="file" />
+      <not>
+        <to type="file" filetype="http://www.webhare.net/xmlns/publisher/internallink" />
+      </not>
+      <not>
+        <to type="file" pathmask="/media/*" />
+      </not>
+    </and>
+    <extendproperties extension="#allpagessettings" contenttype="http://www.webhare.dev/xmlns/page" />
+  </apply>
+
+  <!-- Manual folder -->
+  <foldertype namespace="http://www.webhare.dev/xmlns/foldertypes/manual"
+              tid="webdesigns.devsite.backend.foldertypes.manual"
+              tolliumicon="tollium:folders/publications">
+    <members>
+      <file name="image" />
+      <string name="accesstoken" />
+    </members>
+  </foldertype>
+
+  <tabsextension xmlns="http://www.webhare.net/xmlns/tollium/screens" name="manualsettings">
+    <newtab gid="webdesigns.devsite.backend.manual" tid=".image">
+      <textedit composition="contentdata" cellname="accesstoken" />
+      <box tid=".image">
+        <imgedit composition="contentdata"
+                 cellname="image"
+                 name="image"
+                 width="660px"
+                 height="360px"
+                 allowedactions="all refpoint"
+                 errorlabeltid=".image"
+                 imagesetheight="360px"
+                 imagesetwidth="660px"
+                 publisher="false"
+                 title="" />
+      </box>
+    </newtab>
+  </tabsextension>
+
+  <apply>
+    <to type="folder" />
+    <extendproperties extension="#manualsettings" contenttype="http://www.webhare.dev/xmlns/foldertypes/manual" />
+  </apply>
+
+  <!-- Warn about setting debugsettings on code.webhare.com -->
+  <apply>
+    <to type="all" />
+    <debugsettings userwarning="Please note that you're now trying to debug www.webhare.dev. If you wanted the 'debug' bookmarklet, please go back and read the instructions carefully" />
+  </apply>
+
+  <!-- Forms -->
+  <apply>
+    <to type="all" />
+    <formintegration />
+    <allowfiletype typedef="http://www.webhare.net/xmlns/publisher/formwebtool" />
+  </apply>
+
+  <applysiteprofile path="rtd/rtd.siteprl" />
+  <applysiteprofile path="shared/resources.siteprl" />
+  <applysiteprofile path="pages/search/search.siteprl" />
+  <applysiteprofile path="pages/mywebhare/mywebhare.siteprl.xml" />
+  <applysiteprofile path="widgets/widgets.siteprl" />
+
+  <sitesettings>
+    <webruleset xmlns="http://www.webhare.net/xmlns/system/moduledefinition">
+      <webrule path="/" match="initial">
+        <addheader header="X-Frame-Options" value="DENY" />
+        <addheader header="X-XSS-Protection" value="1; mode=block" />
+        <addheader header="X-Content-Type-Options" value="nosniff" />
+        <addheader header="Referrer-Policy" value="strict-origin-when-cross-origin" />
+        <csp policy="script-src 'self' 'sha256-OUKhNgbY1fG+R4RQh2q3dBH54nPBtQpn1bFsdjT/2W8=' 'sha256-1c3594OZW4s2WpfYA7BDahQdQkeqXwxOythsJknM6EI=' www.google-analytics.com www.google.com maps.googleapis.com; frame-ancestors 'self' [webhare]" />
+      </webrule>
+      <webrule path="/meta/" match="initial" router="../../js/metapages.ts#metaRouter" />
+      <webrule path="/ai/" match="initial" handlebydir="storage::webhare_dev/site/ai/" />
+    </webruleset>
+  </sitesettings>
+
+</siteprofile>

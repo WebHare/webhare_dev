@@ -9,8 +9,47 @@
     </validation>
   </meta>
 
+  <tollium>
+    <components namespace="http://www.webhare.dev/xmlns/components" xmlschema="data/components.xsd" />
+  </tollium>
+
+  <portal>
+    <dashboardgroup name="devdashboard" orderafter="system:* publisher:*" title="WebHare.dev" />
+
+    <dashboardpanel name="certs"
+                    group="devdashboard"
+                    screen="tolliumapps/dashboard/certs.xml#certs"
+                    title="Certificate store" />
+  </portal>
+
+  <publisher>
+    <webdesign name="devsite" title="WHBV: www.webhare.dev design" siteprofile="webdesigns/devsite/devsite.siteprl.xml">
+      <assetpack entrypoint="webdesigns/devsite/index" supportedlanguages="en" />
+    </webdesign>
+  </publisher>
+
+  <moduleregistry>
+    <string name="gitlabtoken" />
+
+    <obsoletenode name="googlecloud" />
+  </moduleregistry>
+
+  <hooking>
+    <intercept name="handlemygoto"
+               interceptfunction="webdesigns/devsite/pages/mywebhare/mywebhare.whlib#HandleMyGoto"
+               target="publisher:findopen_precheck" />
+  </hooking>
+
+  <consilio>
+    <catalog tag="www_webhare_dev" />
+  </consilio>
+
   <servicemanager>
     <task script="scripts/tasks/import-repo.ts" tag="import_repo" description="Import the webhare_dev repository checkout" runatstartup="true" />
     <task runat="*/5 * * * *" script="scripts/tasks/update-from-github.ts" tag="update_from_github" description="Keep the webhare_dev main branch checkout up to date from GitHub" runatstartup="true" />
+    <task script="mod::devkit/scripts/whcommands/generate-sdk-docs.ts" tag="regen_docs" runatstartup="true">
+      <arg>--upload</arg>
+    </task>
   </servicemanager>
+
 </module>

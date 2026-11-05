@@ -1,0 +1,34 @@
+
+[component summary]
+  <ul class="summary">
+    [forevery items]
+      [if showsubitems]
+        <li class="summary--withsubitems">
+          <a href="[url]" class="title">[title]</a>
+          [if description]<span class="description">[description]</span>[/if]
+          [if subitems]
+            <ul>
+              [forevery subitems]
+                <li>
+                  <a href="[url]">[title]</a>
+                </li>
+              [/forevery]
+            </ul>
+          [/if]
+        </li>
+      [else]
+        <li class="summary--thumbs">
+          <a href="[url]">
+            <span class="image [if not imagelink1x]image--placeholder[/if]"
+                  [if imagelink1x]data-srcset="[imagelink1x] 1x, [imagelink2x] 2x"[/if]
+                  [if bgcolor]style="background-color:[bgcolor];"[/if]>
+            </span>
+            <span class="title">[title]</span>
+            [if description]<span class="description">[description]</span>[/if]
+            [if dateformatted]<span class="date">[dateformatted]</span>[/if]
+          </a>
+        </li>
+      [/if]
+    [/forevery]
+  </ul>
+[/component]

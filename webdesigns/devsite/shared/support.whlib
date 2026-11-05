@@ -1,0 +1,251 @@
+<?wh
+LOADLIB "wh::graphics/core.whlib";
+LOADLIB "mod::system/lib/cache.whlib";
+LOADLIB "mod::system/lib/database.whlib";
+
+PUBLIC RECORD image_resizespecs :=
+  [ bigheader_large := [ method := "fill", setwidth := 2880, setheight := 1080 ]
+  , bigheader_medium:= [ method := "fill", setwidth := 1440, setheight :=  540 ]
+  , bigheader_small := [ method := "fill", setwidth :=  720, setheight :=  270 ]
+  , bigheader_blurred_large  := [ method := "fill", setwidth := 2880, setheight := 1080, hblur := 10, vblur := 10 ]
+  , bigheader_blurred_medium := [ method := "fill", setwidth := 1440, setheight :=  540, hblur := 10, vblur := 10 ]
+  , bigheader_blurred_small  := [ method := "fill", setwidth :=  720, setheight :=  270, hblur := 10, vblur := 10 ]
+
+  , smallheader_large := [ method := "fill", setwidth := 2880, setheight := 700 ]
+  , smallheader_medium:= [ method := "fill", setwidth := 1440, setheight := 350 ]
+  , smallheader_small := [ method := "fill", setwidth :=  720, setheight := 175 ]
+  , smallheader_blurred_large  := [ method := "fill", setwidth := 2880, setheight := 700, hblur := 10, vblur := 10 ]
+  , smallheader_blurred_medium := [ method := "fill", setwidth := 1440, setheight := 350, hblur := 10, vblur := 10 ]
+  , smallheader_blurred_small  := [ method := "fill", setwidth :=  720, setheight := 175, hblur := 10, vblur := 10 ]
+
+  , summarythumb1x := [ method := "fill", setwidth := 330, setheight := 180 ]
+  , summarythumb2x := [ method := "fill", setwidth := 660, setheight := 360 ]
+  ];
+
+PUBLIC RECORD FUNCTION GetScaledImage( RECORD image, INTEGER maxwidth, STRING baseurl DEFAULTSTO "" )
+{
+  IF( image.width < maxwidth )
+    maxwidth := image.width;
+
+  RETURN WrapCachedImage( image, [ method := "scale", setwidth := maxwidth, setheight := 0, baseurl := baseurl ] );
+}
+
+
+PUBLIC STRING FUNCTION GetSiteColorByName( STRING name )
+{
+  SWITCH( ToUpperCase(name) )
+  {
+    CASE "BLUE"
+    {
+      RETURN "#3BA1FA";
+    }
+    CASE "DARKGREY"
+    {
+      RETURN "#3B3B3B";
+    }
+    CASE "LIGHTGREY"
+    {
+      RETURN "#E9E9E9";
+    }
+  }
+
+  RETURN "";
+}
+
+
+PUBLIC RECORD FUNCTION ColorStringToRGBa( STRING colorstr )
+{ //convert color hex string to RGB values
+  IF( colorstr = "" )
+    RETURN DEFAULT RECORD;
+
+  IF( colorstr NOT LIKE "#*" )
+    colorstr := "#" || colorstr;
+
+  RETURN GfxUnpackColor( GfxCreateColorFromCSS( colorstr ) );
+}
+
+PUBLIC STRING FUNCTION RGBaToColorString( RECORD rgba )
+{
+  IF( NOT RecordExists(rgba) )
+    RETURN "";
+
+  IF( NOT CellExists(rgba, "a") )
+    INSERT CELL a := 255 INTO rgba;
+
+  STRING colorstr := rgba.a < 255 ? (rgba.a < 16 ? "0" : "") || toString(rgba.a, 16) : "";
+  colorstr := colorstr || (rgba.r < 16 ? "0" : "") || toString(rgba.r, 16)
+                       || (rgba.g < 16 ? "0" : "") || toString(rgba.g, 16)
+                       || (rgba.b < 16 ? "0" : "") || toString(rgba.b, 16);
+
+  RETURN "#" || colorstr;
+}
+
+PUBLIC STRING FUNCTION MergeColors( RECORD rgba, RECORD bgcolor DEFAULTSTO [ r := 255, g := 255, b := 255 ])
+{ //convert rgba to rgb string based on given background color
+  // basic calculation: r = round((RGBA.a * (RGBA.r / 255) + (1 - RGBA.a) * (bgcolor.r / 255) ) * 255);
+
+  INTEGER r := INTEGER( 0.5 + ( (rgba.a * (rgba.r / 255m) + (1 - rgba.a) * (bgcolor.r / 255m) ) * 255m) );
+  INTEGER g := INTEGER( 0.5 + ( (rgba.a * (rgba.g / 255m) + (1 - rgba.a) * (bgcolor.g / 255m) ) * 255m) );
+  INTEGER b := INTEGER( 0.5 + ( (rgba.a * (rgba.b / 255m) + (1 - rgba.a) * (bgcolor.b / 255m) ) * 255m) );
+
+  RETURN RGBaToColorString([ r := r, g := g, b := b ]);
+}
+
+
+PUBLIC STRING FUNCTION CleanupPhoneNr( STRING phonenr )
+{ //strip phonenr from characters used for readability
+  STRING phoneplain := "";
+  BOOLEAN skippart := FALSE;
+  FOREVERY( STRING char FROM Tokenize(phonenr,"") )
+  {
+    IF ( char = "(" ) //skip digits between brackets
+      skippart := TRUE;
+    ELSE IF ( char = ")" )
+      skippart := FALSE;
+
+    IF( char = "+" OR (char >= "0" AND char <= "9" AND NOT skippart) )
+      phoneplain := phoneplain || char;
+  }
+  RETURN phoneplain;
+}
+
+PUBLIC STRING FUNCTION FormatFileSize(INTEGER bytes, INTEGER precision DEFAULTSTO 1)
+{
+  INTEGER precisionfactor := 1;
+  FOR(INTEGER i := 0; i < precision; i := i + 1)
+    precisionfactor := precisionfactor * 10;
+
+  RECORD ARRAY units := [ [ short := 'B'
+                          , text  := 'Byte'
+                          ]
+                        , [ short := 'KB'
+                          , text  := 'Kilobyte'
+                          ]
+                        , [ short := 'MB'
+                          , text  := 'Megabyte'
+                          ]
+                        , [ short := 'GB'
+                          , text  := 'Gigabyte'
+                          ]
+                        , [ short := 'TB'
+                          , text  := 'Terabyte'
+                          ]
+                        , [ short := 'PB'
+                          , text  := 'Petabyte'
+                          ]
+                        , [ short := 'EB'
+                          , text  := 'Exabyte'
+                          ]
+                        , [ short := 'ZB'
+                          , text  := 'Zettabyte'
+                          ]
+                        , [ short := 'YB'
+                          , text  := 'Yottabyte'
+                          ]
+                        ];
+  INTEGER unitfactor := 1;
+  INTEGER sizefloor := bytes;
+  INTEGER unitindex := 0;
+  WHILE( sizefloor >= 1024)
+  {
+    unitfactor := unitfactor*1024;
+    unitindex  := unitindex + 1;
+    sizefloor  := bytes / unitfactor;
+  }
+
+  STRING sizestr := ToString(sizefloor);
+  IF(precisionfactor > 0)
+  {
+    INTEGER fracbytes := bytes - (sizefloor*unitfactor);
+    INTEGER frac := (fracbytes*precisionfactor + ( unitfactor / 2 )) / unitfactor;
+
+    IF(frac > 0)
+      sizestr := sizestr || '.' || ToString(frac);
+  }
+
+  sizestr := sizestr || ' ' || ( unitindex < Length(units) ? units[unitindex].short : '?B');
+
+  RETURN sizestr;
+}
+
+
+PUBLIC RECORD FUNCTION GetPreviousPage( INTEGER folderid, INTEGER objid, STRING fullpathlimit )
+{
+  RECORD folder := SELECT * FROM system.fs_objects WHERE id = folderid AND indexurl != "" AND title != "";
+  IF( NOT RecordExists(folder) OR folder.fullpath NOT LIKE fullpathlimit || "*" )
+    RETURN DEFAULT RECORD;
+
+  RECORD ARRAY folderitems := GetBasicFolderItems( folder.id );
+  RECORD activeitem := SELECT * FROM folderitems WHERE id = folderid OR id = objid;
+  IF( NOT RecordExists(activeitem) )
+    RETURN DEFAULT RECORD;
+
+  RECORD previouspage := SELECT * FROM folderitems WHERE idx = activeitem.idx - 1;
+  IF( NOT RecordExists(previouspage) )
+    previouspage := GetPreviousPage( folder.parent, folder.id, fullpathlimit );
+  ELSE IF( previouspage.isfolder )
+  {
+    RECORD lastpage := GetLastPage( previouspage.id );
+    IF( RecordExists(lastpage) )
+      previouspage := lastpage;
+  }
+
+  IF( RecordExists(previouspage) AND fullpathlimit = previouspage.fullpath )
+    RETURN DEFAULT RECORD;
+
+  RETURN previouspage;
+}
+
+
+RECORD FUNCTION GetLastPage( INTEGER folderid )
+{
+  RECORD lastpage;
+  RECORD ARRAY folderitems := GetBasicFolderItems( folderid );
+  IF( Length(folderitems) > 0 )
+    lastpage := folderitems[END - 1].isfolder ? GetLastPage(folderitems[END - 1].id) : folderitems[END - 1];
+
+  RETURN lastpage;
+}
+
+
+PUBLIC RECORD FUNCTION GetNextPage( INTEGER folderid, INTEGER objid, STRING fullpathlimit )
+{
+  RECORD folder := SELECT * FROM system.fs_objects WHERE id = folderid AND indexurl != "" AND title != "";
+  IF( NOT RecordExists(folder) OR folder.fullpath NOT LIKE fullpathlimit || "*" )
+    RETURN DEFAULT RECORD;
+
+  RECORD ARRAY folderitems := GetBasicFolderItems( folder.id );
+  RECORD activeitem := SELECT * FROM folderitems WHERE id = folderid OR id = objid;
+  IF( NOT RecordExists(activeitem) )
+    RETURN DEFAULT RECORD;
+
+  RECORD nextpage := SELECT * FROM folderitems WHERE idx = activeitem.idx + 1;
+  IF( NOT RecordExists(nextpage) )
+    nextpage := GetNextPage( folder.parent, folder.id, fullpathlimit );
+
+  IF( RecordExists(nextpage) AND fullpathlimit = nextpage.fullpath )
+    RETURN DEFAULT RECORD;
+
+  RETURN nextpage;
+}
+
+
+RECORD ARRAY FUNCTION GetBasicFolderItems( INTEGER parentid )
+{
+  RETURN GetAdhocCached( [ parentid := parentid ], PTR GetBasicFolderItemsCached(parentid) );
+}
+
+RECORD FUNCTION GetBasicFolderItemsCached( INTEGER parentid )
+{
+  RECORD ARRAY items := SELECT id, link := indexurl, name, title, fullpath, isfolder, url
+                          FROM system.fs_objects AS items
+                         WHERE parent = parentid
+                           AND indexurl != ""
+                           AND title != ""
+                      ORDER BY ordering, ToUpperCase(title), name;
+
+  RETURN [ ttl   := 3600 * 1000 //max 1 hour
+         , eventmasks := [ "system:whfs.folder." || ToString(parentid) ]
+         , value := (SELECT *, idx := #items FROM items)
+         ];
+}

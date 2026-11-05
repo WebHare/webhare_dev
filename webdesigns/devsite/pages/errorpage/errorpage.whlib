@@ -1,0 +1,102 @@
+<?wh
+LOADLIB "wh::internet/urls.whlib";
+LOADLIB "wh::witty.whlib";
+LOADLIB "mod::consilio/lib/search.whlib";
+LOADLIB "mod::publisher/lib/siteapi.whlib";
+LOADLIB "mod::system/lib/database.whlib";
+LOADLIB "mod::system/lib/whfs.whlib";
+
+PUBLIC RECORD FUNCTION GenerateErrorPage(OBJECT webcontext, INTEGER errorcode, STRING url)
+{
+  RECORD pagedata := [ title := "", content := DEFAULT MACRO PTR, fileid := 0 ];
+
+  OBJECT file := webcontext->targetsite->OpenByPath("/media/errorpages/" || ToString(errorcode) || ".rtd");
+
+  IF( NOT Objectexists(file) )
+  {
+    INTEGER resources_siteid;
+    INTEGER resourcesfolderid := OpenWHFSType("http://www.webhare.dev/xmlns/site")->GetInstanceData(webcontext->targetsite->root).siterepository;
+    IF( resourcesfolderid > 0 )
+      resources_siteid := SELECT AS INTEGER parentsite FROM system.fs_objects WHERE id = resourcesfolderid;
+    IF( resources_siteid > 0 )
+      file := OpenSite( resources_siteid )->OpenByPath("/media/errorpages/" || ToString(errorcode) || ".rtd");
+  }
+
+  pagedata.title := Objectexists(file) AND file->title != "" ? file->title : ToString(errorcode);
+
+  RECORD rtddata;
+  IF( ObjectExists(file) )
+  {
+    pagedata.fileid := file->id;
+    rtddata := file->GetInstanceData("http://www.webhare.net/xmlns/publisher/richdocumentfile").data;
+  }
+
+  IF( errorcode = 404 )
+  { //show suggestions
+    RECORD wittydata := [ content := RecordExists(rtddata) ? PTR webcontext->OpenRTD(rtddata)->RenderAllObjects : DEFAULT MACRO PTR
+                        , suggestions := RECORD[]
+                        ];
+
+    TRY
+    {
+      wittydata.suggestions := GetErrorPageSuggestions( webcontext, url );
+    }
+    CATCH(OBJECT e)
+    {
+
+    }
+
+    pagedata.content := PTR EmbedWittyComponent("mod::webhare_dev/webdesigns/devsite/pages/errorpage/errorpage.witty:404page", wittydata);
+  }
+  ELSE IF( RecordExists(rtddata) )
+  {
+    pagedata.content := PTR webcontext->OpenRTD(rtddata)->RenderAllObjects;
+  }
+
+  RETURN pagedata;
+}
+
+RECORD ARRAY FUNCTION GetErrorPageSuggestions(OBJECT webcontext, STRING url )
+{
+  RECORD ARRAY suggestions;
+
+  RECORD urlinfo := UnpackURL(url);
+
+  //Split path in parts
+  STRING ARRAY pathparts := Tokenize(urlinfo.urlpath, "/");
+
+  //If subdomain get sub parts
+  STRING ARRAY hostparts := Tokenize(urlinfo.host, ".");
+  FOR( INTEGER i := Length(hostparts) - 3; i >= 0; i := i - 1 )
+  {
+    IF( ToUpperCase(hostparts[i]) != "WWW" AND ToUpperCase(hostparts[i]) NOT LIKE "TEST*" )
+      INSERT hostparts[i] INTO pathparts AT END;
+  }
+
+  //Check for dashes and add suggestion without
+  FOREVERY(STRING part FROM pathparts)
+  {
+    IF(part LIKE "*-*")
+      INSERT SubStitute(part,"-"," ") INTO pathparts AT END;
+    IF(part LIKE "*_*")
+      INSERT SubStitute(part,"_"," ") INTO pathparts AT END;
+  }
+
+  OBJECT searcher := OpenSearchObject( webcontext->languagecode, "webhare_dev:" || webcontext->targetsite->name, "" );
+
+  STRING query;
+  FOREVERY(STRING part FROM pathparts)
+    IF( part != "" )
+      query := query || ' "' || part || '"';
+
+  RECORD result := searcher->Search( TrimWhiteSpace(query) , 0, 10 );//Max 10 suggestions
+
+  FOREVERY(RECORD item FROM result.results)
+  {
+    RECORD file := SELECT *, link := indexurl FROM system.fs_objects WHERE id = ToInteger(item.groupid,0) AND indexurl != "" AND title != "";
+    IF(RecordExists(file))
+      INSERT file INTO suggestions AT END;
+  }
+
+  RETURN suggestions;
+}

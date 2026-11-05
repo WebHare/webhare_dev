@@ -1,0 +1,25 @@
+<siteprofile xmlns="http://www.webhare.net/xmlns/publisher/siteprofile">
+
+  <filetype namespace="http://www.webhare.dev/xmlns/filetypes/search"
+            blobiscontent="false"
+            isacceptableindex="true"
+            ispublishable="true"
+            tid="webdesigns.devsite.backend.filetypes.search"
+            tolliumicon="tollium:actions/search">
+    <members>
+      <array name="suggestlinks">
+        <string name="title" />
+        <intextlink name="link" />
+      </array>
+    </members>
+    <dynamicexecution cachewebvariables="*" webpageobjectname="./search.whlib#SearchDesign" />
+  </filetype>
+
+  <!-- Consilio catalog, name MUST start with <modulename>:
+       Change for your own site the folder attribute in the contentsource (site::<your-site-name>)
+  -->
+  <sitesettings sitename="www.webhare.dev">
+    <addtocatalog catalog="www_webhare_dev" />
+  </sitesettings>
+
+</siteprofile>

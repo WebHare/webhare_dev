@@ -1,0 +1,371 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<language xmlns="http://www.webhare.net/xmlns/tollium/screens" xmlns:html="http://www.w3.org/1999/xhtml" xml:lang="en">
+  <textgroup gid="foldertypes">   <!-- foldertypes -->
+    <text tid="docs">Documents</text>
+    <text tid="manual">Manual</text>
+    <text tid="search">Search</text>
+  </textgroup>
+  <textgroup gid="manualsettings">   <!-- manualsettings -->
+    <text tid="tag">Tag</text>
+    <text tid="version">Version</text>
+  </textgroup>
+  <textgroup gid="module">   <!-- module -->
+    <text tid="versioningapp_intranet">intranet.webhare.com versioning</text>
+  </textgroup>
+  <textgroup gid="pageextras">   <!-- pageextras -->
+    <text tid="tags">Tags</text>
+  </textgroup>
+  <textgroup gid="pdf">   <!-- pdf -->
+    <text tid="contentlist">Content</text>
+  </textgroup>
+  <textgroup gid="screens">   <!-- screens -->
+    <textgroup gid="firstfile">   <!-- screens.firstfile -->
+      <textgroup gid="dialogs">   <!-- screens.firstfile.dialogs -->
+        <text tid="warning">Warning for something</text>
+      </textgroup>
+    </textgroup>
+  </textgroup>
+  <textgroup gid="site">   <!-- site -->
+    <text tid="pagenotfound">Page not found</text>
+    <text tid="search">Search</text>
+    <text tid="searchcurrentsection">Only in current section</text>
+    <text tid="searchfor">Search for...</text>
+    <text tid="searchsection">Only in section</text>
+    <textgroup gid="devsite">   <!-- site.devsite -->
+      <textgroup gid="topic">   <!-- site.devsite.topic -->
+        <text tid="other_identifiers">Uncategorized</text>
+      </textgroup>
+    </textgroup>
+    <textgroup gid="search">   <!-- site.search -->
+      <text tid="noinput">No searchterms given</text>
+      <text tid="noresults">No results</text>
+      <text tid="notitle">No title</text>
+      <text tid="result">result</text>
+      <text tid="results">results</text>
+      <text tid="searchedfor">Searched for:</text>
+    </textgroup>
+  </textgroup>
+  <textgroup gid="webdesigns">   <!-- webdesigns -->
+    <textgroup gid="devsite">   <!-- webdesigns.devsite -->
+      <textgroup gid="backend">   <!-- webdesigns.devsite.backend -->
+        <textgroup gid="case">   <!-- webdesigns.devsite.backend.case -->
+          <text tid="client">Client</text>
+          <text tid="highlight">Highlight</text>
+          <text tid="tab">Tags</text>
+          <text tid="topics">Topics</text>
+        </textgroup>
+        <textgroup gid="filetypes">   <!-- webdesigns.devsite.backend.filetypes -->
+          <text tid="search">Search</text>
+        </textgroup>
+        <textgroup gid="foldertypes">   <!-- webdesigns.devsite.backend.foldertypes -->
+          <text tid="cases">Cases</text>
+          <text tid="clients">Clients map</text>
+          <text tid="manual">Manual</text>
+          <text tid="news">News map</text>
+          <text tid="photoalbum">Photoalbum</text>
+          <text tid="topics">Topics map</text>
+        </textgroup>
+        <textgroup gid="header">   <!-- webdesigns.devsite.backend.header -->
+          <text tid="editheader">Edit header</text>
+          <text tid="empty">empty</text>
+          <text tid="headertype">Show</text>
+          <text tid="headertype-fromparent">settings from parent (path)</text>
+          <text tid="headertype-images-large">Images large</text>
+          <text tid="headertype-images-small">Images small</text>
+          <text tid="headertype-map">Map (google maps)</text>
+          <text tid="headertype-none">None</text>
+          <text tid="image">Header image</text>
+          <text tid="images">Images</text>
+          <text tid="link">Link</text>
+          <text tid="location">Location</text>
+          <text tid="subtitle">Small title</text>
+          <text tid="tab">Header</text>
+          <text tid="textposition">Position text</text>
+          <text tid="textposition-bottom">Bottom</text>
+          <text tid="textposition-middle">Middle</text>
+          <text tid="title">Big title</text>
+        </textgroup>
+        <textgroup gid="manual">   <!-- webdesigns.devsite.backend.manual -->
+          <text tid="accesstoken">Access token</text>
+          <text tid="image">Preview image</text>
+        </textgroup>
+        <textgroup gid="newsfilter">   <!-- webdesigns.devsite.backend.newsfilter -->
+          <text tid="and">and</text>
+          <text tid="newsfilter">Filter</text>
+          <text tid="searchoptions-createdate">Created between</text>
+          <text tid="searchoptions-date">Published between</text>
+          <text tid="searchoptions-title">Name or title</text>
+        </textgroup>
+        <textgroup gid="page">   <!-- webdesigns.devsite.backend.page -->
+          <text tid="date">Date</text>
+          <text tid="hideformainnav">Don't show in main navigation</text>
+          <text tid="image">Image (minimal 660x360)</text>
+          <text tid="imagenote">(Image for summary and share image)</text>
+          <text tid="pageextra">Thumbnail</text>
+          <text tid="seotitle">SEO title</text>
+          <text tid="subnavassummary">Show pages only in summary</text>
+          <text tid="widecontent">Content extra wide</text>
+        </textgroup>
+        <textgroup gid="site">   <!-- webdesigns.devsite.backend.site -->
+          <text tid="address">Address</text>
+          <text tid="city">City</text>
+          <text tid="company">Company name</text>
+          <text tid="contact">Contact</text>
+          <text tid="cookie">Cookie</text>
+          <text tid="cookiemsg">Cookies message</text>
+          <text tid="editsocialmedia">Edit socialmedia</text>
+          <text tid="email">Email</text>
+          <text tid="empty">Empty</text>
+          <text tid="foldoutmenu">Foldout menu (instead of pills)</text>
+          <text tid="gps">GPS location</text>
+          <text tid="link">Link</text>
+          <text tid="logo">Logo</text>
+          <text tid="logo_subtitle">Subtitle</text>
+          <text tid="logo_title">Title</text>
+          <text tid="name">Socialmedia</text>
+          <text tid="phone">Phone</text>
+          <text tid="siterepository">Media folder</text>
+          <text tid="socialmedia">Socialmedia</text>
+          <text tid="socialmedia-facebook">Facebook</text>
+          <text tid="socialmedia-instagram">Instagram</text>
+          <text tid="socialmedia-linkedin">LinkedIn</text>
+          <text tid="socialmedia-twitter">Twitter</text>
+          <text tid="socialmedia-vimeo">Vimeo</text>
+          <text tid="socialmedia-youtube">YouTube</text>
+          <text tid="support">Support link</text>
+          <text tid="zip">ZIP</text>
+          <textgroup gid="footer">   <!-- webdesigns.devsite.backend.site.footer -->
+            <text tid="editfooternav">Edit footer</text>
+            <text tid="empty">Empty</text>
+            <text tid="footer">Footer</text>
+            <text tid="footernav">Footer navigation (bottom)</text>
+            <text tid="link">Link</text>
+            <text tid="title">Title</text>
+          </textgroup>
+        </textgroup>
+        <textgroup gid="widgets">   <!-- webdesigns.devsite.backend.widgets -->
+          <text tid="anchor">Anchor</text>
+          <text tid="colorblock">Block with background color</text>
+          <text tid="contactperson">Contact person</text>
+          <text tid="contactpersons">Contact persons</text>
+          <text tid="cta">CTA</text>
+          <text tid="ctabutton">CTA button</text>
+          <text tid="foldablecontentlist">Foldablecontent</text>
+          <text tid="fullwidthimage">Fullwidth image</text>
+          <text tid="image">Wide image</text>
+          <text tid="newscarrousel">News carrousel</text>
+          <text tid="photoalbum">Photoalbum carrousel</text>
+          <text tid="photoalbumsmall">Photoalbum</text>
+          <text tid="productdisplay">Product display</text>
+          <text tid="sourcecodeobject">Source code example</text>
+          <text tid="threecol">Three columns</text>
+          <text tid="tip">Remark</text>
+          <text tid="tip-check">Remark: Tip or advise</text>
+          <text tid="tip-criticalwarning">Remark: Critical warning</text>
+          <text tid="tip-warning">Remark: Warning</text>
+          <text tid="twocol">Two columns</text>
+          <text tid="twocolsimple">2 columns</text>
+          <text tid="video">Video</text>
+          <textgroup gid="anchor">   <!-- webdesigns.devsite.backend.widgets.anchor -->
+            <text tid="anchor">Name</text>
+            <text tid="note">Name without spaces or special characters</text>
+          </textgroup>
+          <textgroup gid="colorblock">   <!-- webdesigns.devsite.backend.widgets.colorblock -->
+            <text tid="color">Background color</text>
+            <text tid="color_option">Color</text>
+            <text tid="color_option-blue">Blue</text>
+            <text tid="color_option-custom">Custom</text>
+            <text tid="color_option-darkgrey">Dark grey</text>
+            <text tid="color_option-lightgrey">Light grey</text>
+            <text tid="colorblock">Block with background color</text>
+            <text tid="lighttext">Light text color</text>
+            <text tid="smallcontent">Small content</text>
+            <text tid="text">Content</text>
+            <text tid="textalign">Text-align</text>
+            <text tid="textalign-center">Center</text>
+            <text tid="textalign-left">Left</text>
+            <text tid="wide">Fullwidth</text>
+          </textgroup>
+          <textgroup gid="contactperson">   <!-- webdesigns.devsite.backend.widgets.contactperson -->
+            <text tid="contactperson">Contact person</text>
+            <text tid="description">Description</text>
+            <text tid="email">Email</text>
+            <text tid="image">Mugshot</text>
+            <text tid="phone">Phone</text>
+          </textgroup>
+          <textgroup gid="contactpersons">   <!-- webdesigns.devsite.backend.widgets.contactpersons -->
+            <text tid="contactpersons">Contact persons</text>
+          </textgroup>
+          <textgroup gid="cta">   <!-- webdesigns.devsite.backend.widgets.cta -->
+            <text tid="description">Text</text>
+            <text tid="image">Image</text>
+            <text tid="link">Link</text>
+            <text tid="link_position">Position</text>
+            <text tid="link_position-bottom">Bottom</text>
+            <text tid="link_position-top">Top</text>
+            <text tid="link_text">Link text</text>
+            <text tid="minheight">min-height (px)</text>
+            <text tid="parallax">Parallax</text>
+          </textgroup>
+          <textgroup gid="ctabutton">   <!-- webdesigns.devsite.backend.widgets.ctabutton -->
+            <text tid="link">Link</text>
+            <text tid="title">Title</text>
+          </textgroup>
+          <textgroup gid="foldablecontentlist">   <!-- webdesigns.devsite.backend.widgets.foldablecontentlist -->
+            <text tid="description">Text</text>
+            <text tid="edititem">Edit item</text>
+            <text tid="items">Items</text>
+            <text tid="noitems">empty</text>
+            <text tid="title">Title</text>
+          </textgroup>
+          <textgroup gid="image">   <!-- webdesigns.devsite.backend.widgets.image -->
+            <text tid="image">Image</text>
+            <text tid="wide">Wide</text>
+          </textgroup>
+          <textgroup gid="newscarrousel">   <!-- webdesigns.devsite.backend.widgets.newscarrousel -->
+            <text tid="newsfolder">News folder</text>
+          </textgroup>
+          <textgroup gid="photoalbum">   <!-- webdesigns.devsite.backend.widgets.photoalbum -->
+            <text tid="link">Link</text>
+            <text tid="link_text">Link text</text>
+            <text tid="photoalbum">Photoalbum</text>
+            <text tid="showtitles">Show titles above images</text>
+            <text tid="title">Title</text>
+          </textgroup>
+          <textgroup gid="productdisplay">   <!-- webdesigns.devsite.backend.widgets.productdisplay -->
+            <text tid="color">Background color</text>
+            <text tid="color_option">Color</text>
+            <text tid="color_option-blue">Blue</text>
+            <text tid="color_option-custom">Custom</text>
+            <text tid="color_option-darkgrey">Dark grey</text>
+            <text tid="color_option-lightgrey">Light grey</text>
+            <text tid="contenttype">Show</text>
+            <text tid="contenttype-image">Image</text>
+            <text tid="contenttype-video">Video</text>
+            <text tid="editmedia">Edit media</text>
+            <text tid="empty">Empty</text>
+            <text tid="image">Image</text>
+            <text tid="media">Items</text>
+            <text tid="mediatype">Media type</text>
+            <text tid="mediatype-ipadair2_silver">iPad Air2 silver</text>
+            <text tid="mediatype-ipadair2_spacegray">iPad Air2 spacegray</text>
+            <text tid="mediatype-iphone7_black">iPhone 7 black</text>
+            <text tid="mediatype-iphone7_silver">iPhone 7 silver</text>
+            <text tid="mediatype-macbook12inch">Macbook 12inch</text>
+            <text tid="mediatype-macbookpro15inch">Macbook Pro 15inch</text>
+            <text tid="video">Video</text>
+          </textgroup>
+          <textgroup gid="sourcecodeobject">   <!-- webdesigns.devsite.backend.widgets.sourcecodeobject -->
+            <text tid="type">Type</text>
+            <text tid="type-harescript">Harescript</text>
+            <text tid="type-html">HTML</text>
+            <text tid="type-js">Javascript</text>
+            <text tid="type-witty">Witty</text>
+            <text tid="type-xml">XML</text>
+          </textgroup>
+          <textgroup gid="threecol">   <!-- webdesigns.devsite.backend.widgets.threecol -->
+            <text tid="color">Background color</text>
+            <text tid="color_option">Color</text>
+            <text tid="color_option-blue">Blue</text>
+            <text tid="color_option-custom">Custom</text>
+            <text tid="color_option-darkgrey">Dark grey</text>
+            <text tid="color_option-lightgrey">Light  grey</text>
+            <text tid="image1">Image left</text>
+            <text tid="image2">Image center</text>
+            <text tid="image3">Image right</text>
+            <text tid="lighttext">Light text color</text>
+            <text tid="text1">Text left</text>
+            <text tid="text2">Text center</text>
+            <text tid="text3">Text right</text>
+            <text tid="threecol">Three columns</text>
+            <text tid="title1">Title left</text>
+            <text tid="title2">Title center</text>
+            <text tid="title3">Title right</text>
+            <text tid="withheader">With header</text>
+          </textgroup>
+          <textgroup gid="tip">   <!-- webdesigns.devsite.backend.widgets.tip -->
+            <text tid="color">background color</text>
+            <text tid="color-blue">Blue</text>
+            <text tid="color-green">Green</text>
+            <text tid="color-grey">Grey</text>
+            <text tid="color-red">Red</text>
+            <text tid="color-yellow">Yellow</text>
+            <text tid="description">Text</text>
+            <text tid="icon">Icon</text>
+            <text tid="icon-check">Check</text>
+            <text tid="icon-exclamation">Exclamation</text>
+            <text tid="icon-none">-</text>
+            <text tid="icon-question">Questionmark</text>
+            <text tid="icon-warning">Warning</text>
+            <text tid="title">Title</text>
+          </textgroup>
+          <textgroup gid="twocol">   <!-- webdesigns.devsite.backend.widgets.twocol -->
+            <text tid="bgcolor">Backgroundcolor (#rrggbb)</text>
+            <text tid="color_option">Color</text>
+            <text tid="color_option-blue">Blue</text>
+            <text tid="color_option-custom">Custom</text>
+            <text tid="color_option-darkgrey">Dark grey</text>
+            <text tid="color_option-lightgrey">Light grey</text>
+            <text tid="firstcolumnonethirth">First column 1/3 width</text>
+            <text tid="leftcol">Left</text>
+            <text tid="lighttext">Light text color</text>
+            <text tid="rightcol">Right</text>
+            <text tid="smallcontent">Small content</text>
+            <text tid="textalign">Text-align</text>
+            <text tid="textalign-center">Center</text>
+            <text tid="textalign-left">Left</text>
+            <text tid="textalign-right">Right</text>
+            <text tid="twocol">Two columns</text>
+            <text tid="wide">Fullwidth</text>
+          </textgroup>
+          <textgroup gid="video">   <!-- webdesigns.devsite.backend.widgets.video -->
+            <text tid="image">Alternative image</text>
+            <text tid="video">Video</text>
+          </textgroup>
+        </textgroup>
+      </textgroup>
+      <textgroup gid="frontend">   <!-- webdesigns.devsite.frontend -->
+        <text tid="closemessage">Close message</text>
+        <text tid="contentlistheader">Contents</text>
+        <text tid="filtertitles">Filter title(s)</text>
+        <text tid="respond">Comments</text>
+        <text tid="routeplanner">Get direction with Google Maps</text>
+        <textgroup gid="errorpage">   <!-- webdesigns.devsite.frontend.errorpage -->
+          <text tid="suggestions">Are you looking for:</text>
+        </textgroup>
+        <textgroup gid="footer">   <!-- webdesigns.devsite.frontend.footer -->
+          <text tid="hidetopics">Hide topics</text>
+          <text tid="mailus">Mail us</text>
+          <text tid="showtopics">Show all topics</text>
+          <text tid="topics">Webhare topics</text>
+        </textgroup>
+        <textgroup gid="header">   <!-- webdesigns.devsite.frontend.header -->
+          <text tid="support">Support</text>
+        </textgroup>
+        <textgroup gid="js">   <!-- webdesigns.devsite.frontend.js -->
+          <text tid="closemessage">Close message</text>
+          <text tid="noresults">No results</text>
+          <text tid="recentlyviewed">Recently viewed</text>
+        </textgroup>
+        <textgroup gid="main">   <!-- webdesigns.devsite.frontend.main -->
+          <text tid="cases">cases</text>
+          <text tid="more">More</text>
+          <text tid="nextpage">Next</text>
+          <text tid="previouspage">Previous</text>
+          <text tid="relatedcases">Related cases</text>
+        </textgroup>
+        <textgroup gid="search">   <!-- webdesigns.devsite.frontend.search -->
+          <text tid="button">Search</text>
+          <text tid="moreresultsin">More results in</text>
+          <text tid="notitle">No title</text>
+          <text tid="nrofresults">There <ifparam p="1" value="1">is <param p="1"/> result<else/>are <param p="1"/> results</ifparam> found for "<param p="2"/>"</text>
+          <text tid="othersiteresults">Other site results</text>
+          <text tid="placeholder">Search...</text>
+          <text tid="resultswithin">Results within</text>
+          <text tid="retrievingresults">Retrieving results...</text>
+          <text tid="showmore">Show more...</text>
+        </textgroup>
+      </textgroup>
+    </textgroup>
+  </textgroup>
+</language>

@@ -1,0 +1,364 @@
+[component devsite]
+  <a href="reference/">References</a>
+[/component]
+
+[component toplevel]
+  <h1 class="whdoc__header heading1">Reference</h1>
+  [! ADDME pick up a RTD for content? !]
+  <ul class="summary">
+    [forevery topicgroups]
+      <li class="summary--withsubitems">
+        <span class="title">[title]</a>
+          <ul>
+            [forevery expandedtopics]
+              <li>
+                <a href="[referenceroot][sublink]" class="whdoc__topiclink">[title]</a>
+                [! [shortdescription !]
+              </li>
+            [/forevery]
+          </ul>
+        </span>
+      </li>
+    [/forevery]
+  </ul>
+[/component]
+
+[component topic]
+  <h1 class="whdoc__header heading1">[title]</h1>
+  [html]
+  [!<div class="whdoc__short">[shortdescription]</div>!]
+  <ul class="whdoc__subpagelist unordered">
+    [forevery subpages]
+      <li class="whdoc__subpage">
+        <a href="[referenceroot][sublink]" class="whdoc__subpagelink">[title]</a>
+        [if shortdescription]<br>[shortdescription:none][/if]
+      </li>
+    [/forevery]
+  </ul>
+  [forevery sections]
+    <h2 class="whdoc__subheader heading2">[if title][title][else][gettid site.devsite.topic.other_identifiers][/if]</h2>
+    <ul class="whdoc__subpagelist unordered">
+      [forevery identifiers]
+        <li class="whdoc__subpage">
+          <a href="[referenceroot][sublink]" class="whdoc__subpagelink">[title]</a>
+          [if shortdescription]<br>[shortdescription:none][/if]
+        </li>
+      [/forevery]
+      [forevery components]
+        <li class="whdoc__subpage">
+          <a href="[referenceroot][sublink]" class="whdoc__subpagelink">[title]</a>
+          [if shortdescription]<br>[shortdescription:none][/if]
+        </li>
+      [/forevery]
+    </ul>
+  [/forevery]
+[/component]
+
+[component topicdoc]
+  [if menu]
+    [embed sidemenu]
+  [/if]
+  [html]
+[/component]
+
+[component sidemenu]
+  <nav id="sidenav" class="[type]">
+    <div class="scrollcontainer">
+      [forevery items]
+        [if title]<div class="title">[title]</div>[/if]
+        <ul>
+          [forevery items]
+            <li class="[if isselected]active[/if] [!if not id]deeplink[/if!]" [!if id]data-id="[id]"[/if!]>
+              <a href="[url]" class="item">[title]</a>
+            </li>
+          [/forevery]
+        </ul>
+      [/forevery]
+    </div>
+  </nav>
+[/component]
+
+[component menulink]
+  [if sublink]
+    <a href="[referenceroot][sublink]">[title]</a>
+  [else]
+    [title]
+  [/if]
+  [if inherited] (inherited from [inherited])[/if]
+  [if shortdescription]<br>[shortdescription:none][/if]
+[/component]
+
+[component objtypeoverview]
+  [if constructor]
+    <h3 class="heading3">Constructor</h3>
+    <ul class="unordered">
+      [forevery constructor]
+        <li class="whdoc__objtype-member [if isselected]whdoc__objtype-member--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+  [if members]
+    <h3 class="heading3">Variables</h3>
+    <ul class="unordered">
+      [forevery members]
+        <li class="whdoc__objtype-member [if isselected]whdoc__objtype-member--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+  [if properties]
+    <h3 class="heading3">Properties</h3>
+    <ul class="unordered">
+      [forevery properties]
+        <li class="whdoc__objtype-member [if isselected]whdoc__objtype-member--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+  [if methods]
+    <h3 class="heading3">Functions</h3>
+    <ul class="unordered">
+      [forevery methods]
+        <li class="whdoc__objtype-member [if isselected]whdoc__objtype-member--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+  [if columns]
+    <h3 class="heading3">Columns</h3>
+    <ul class="unordered">
+      [forevery columns]
+        <li class="whdoc__schema-table [if isselected]whdoc__schema-column--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+  [if tables]
+    <h3 class="heading3">Tables</h3>
+    <ul class="unordered">
+      [forevery tables]
+        <li class="whdoc__schema-table [if isselected]whdoc__schema-table--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+[/component]
+
+[component cellobjecttypes]
+  <div class="whdoc__hssymbol__cellobjecttypes">
+    Possible objecttypes:
+    <ul class="whdoc__hssymbol__cellobjecttypes__list">
+      [forevery objecttypes]
+        <li class="whdoc__hssymbol__cellobjecttypes__listitem">
+          <a href="[referenceroot][sublink]">[name]</a>
+        </li>
+      [/forevery]
+    </ul>
+  </div>
+[/component]
+
+[component schematableoverview]
+  [if tables]
+    <h3 class="heading3">Tables</h3>
+    <ul class="unordered">
+      [forevery tables]
+        <li class="whdoc__schema-table [if isselected]whdoc__schema-table--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+  [if columns]
+    <h3 class="heading3">Columns</h3>
+    <ul class="unordered">
+      [forevery columns]
+        <li class="whdoc__schema-table [if isselected]whdoc__schema-table--selected[/if]">[embed menulink]</li>
+      [/forevery]
+    </ul>
+  [/if]
+[/component]
+
+
+[component harescriptsymbol]
+  [if menu]
+    [embed sidemenu]
+  [/if]
+
+  <h1 class="whdoc__header heading1">[title]
+    [if resourceref] <span class="devsite__openineditor" data-resourceref="[resourceref:jsonvalue]">(open)</a>[/if]
+  </h1>
+  <div class="whdoc__hssymbol__container">
+    <div class="whdoc__hssymbol">
+      [if short]
+        <div class="whdoc__hssymbol__short">
+          [short:none]
+        </div>
+      [/if]
+      <h2 class="heading2">Syntax</h2>
+      <div class="whdoc__hssymbol__usage">
+        <pre class="line-numbers"><code class="language-harescript">
+          [usage:none]
+        </code></pre>
+      </div>
+      [if param]
+        <h3 class="heading3">Parameters</h3>
+        [forevery param]
+          <div class="whdoc__hssymbol__param">
+            <div class="whdoc__hssymbol__paramname">
+              <pre class="whdoc__inlinecode"><code class="language-harescript">
+                [if variabletype][variabletype] [/if][name]
+              </code></pre>
+            </div>
+            [if objecttypes]
+              [embed cellobjecttypes]
+            [/if]
+            <div class="whdoc__hssymbol__paramdesc">
+              [description:none]
+              [if paramcell]
+                <div class="whdoc__hssymbol__paramcells">
+                  [forevery paramcell]
+                    <div class="whdoc__hssymbol__paramcell">
+                      <pre class="whdoc__inlinecode"><code class="language-harescript">
+                        [if variabletype][variabletype] [/if][name]
+                      </code></pre>
+                      [if objecttypes]
+                        [embed cellobjecttypes]
+                      [/if]
+                      <div class="whdoc__hssymbol__paramcelldesc">
+                        [description:none]
+                      </div>
+                    </div>
+                  [/forevery]
+                </div>
+              [/if]
+            </div>
+          </div>
+        [/forevery]
+      [/if]
+      [if returnvalue]
+        <h3 class="heading3">Return value</h3>
+        <div class="whdoc__hssymbol__retval">
+          [if variabletype]
+            <pre class="whdoc__inlinecode"><code class="language-harescript">
+              [variabletype]
+            </code></pre>
+          [/if]
+          [if objecttypes]
+            [embed cellobjecttypes]
+          [/if]
+          <div class="whdoc__hssymbol__retvaldesc">
+            [description:none]
+            [if returnvaluecell]
+              <div class="whdoc__hssymbol__retvalcells">
+                [forevery returnvaluecell]
+                  <div class="whdoc__hssymbol__retvalcell">
+                    <pre class="whdoc__inlinecode"><code class="language-harescript">
+                      [if variabletype][variabletype] [/if][name]
+                    </code></pre>
+                    [if objecttypes]
+                      [embed cellobjecttypes]
+                    [/if]
+                    <div class="whdoc__hssymbol__retvalcelldesc">
+                      [description:none]
+                    </div>
+                  </div>
+                [/forevery]
+              </div>
+            [/if]
+          </div>
+        </div>
+      [/if]
+      [if rootcell]
+        [forevery rootcell]
+          <div class="whdoc__hssymbol__rootcell">
+              [if name]
+                Cell [name]
+                [if variabletype] ([variabletype])[/if]:
+              [else]
+                [if variabletype] ([variabletype]: [/if]
+              [/if]
+              [description:none]
+          </div>
+          [if objecttypes]
+            [embed cellobjecttypes]
+          [/if]
+        [/forevery]
+      [/if]
+      [if long]
+        <h2 class="heading2">Description</h2>
+        <div class="whdoc__hssymbol__long">
+          [long:none]
+        </div>
+      [/if]
+      [if examples]
+        <h2 class="heading2">Examples</h2>
+        <div class="whdoc__examples">
+          [forevery examples]
+            [examples:none]
+          [/forevery]
+        </div>
+      [/if]
+    </div>
+
+    [if overview]
+      <div class="whdoc__objtype">
+        [embed objtypeoverview]
+      </div>
+    [/if]
+  </div>
+[/component]
+
+[component component]
+  [if menu]
+    [embed sidemenu]
+  [/if]
+
+  <h1 class="whdoc__header heading1">[title]</h1>
+  <div class="whdoc__component__container">
+    <div class="whdoc__component">
+      [if short]
+        <div class="whdoc__component__short">
+          [short:none]
+        </div>
+      [/if]
+      <h2 class="heading2">Syntax</h2>
+      <div class="whdoc__component__usage">
+        <pre class="line-numbers"><code class="language-xml">
+          [usage:none]
+        </code></pre>
+      </div>
+      [if long]
+        <h2 class="heading2">Description</h2>
+        <div class="whdoc__component__long">
+          [long:none]
+        </div>
+      [/if]
+      [if examples]
+        <h2 class="heading2">Examples</h2>
+        <div class="whdoc__examples">
+          [forevery examples]
+            [examples:none]
+          [/forevery]
+        </div>
+      [/if]
+    </div>
+
+    [if overview]
+      <div class="whdoc__component__overview">
+        [if attributes]
+          <h3 class="heading3">Attributes</h3>
+          <ul class="unordered">
+            [forevery attributes]
+              <li class="whdoc__component__attribute">[embed menulink]</li>
+            [/forevery]
+          </ul>
+        [/if]
+      </div>
+    [/if]
+  </div>
+[/component]
+
+
+[component searchresults]
+  [if results]
+    <ul class="whdoc__searchresults unordered">
+    [forevery results]
+      <li><a href="[referenceroot][sublink]">[title]</a></li>
+    [/forevery]
+  [else]
+    No results, sorry
+  [/if]
+[/component]

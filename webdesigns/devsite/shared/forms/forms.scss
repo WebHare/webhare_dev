@@ -1,0 +1,488 @@
+/* new form stijling: */
+
+::-webkit-input-placeholder { opacity: 0.3; color: inherit; }
+::-moz-placeholder { opacity: 0.3; color: inherit; }
+:-ms-input-placeholder { opacity: 0.3; color: inherit; }
+input:-moz-placeholder { opacity: 0.3; color: inherit; }
+
+
+  .whwp-survey form
+, .wh-form
+{
+  /* radio / checkbox */
+    & input[type='radio']
+  , & input[type='checkbox']
+  {
+    display: none;
+  }
+    & input[type='radio'] + label
+  , & input[type='checkbox'] + label
+  {
+    vertical-align: top;
+    cursor: pointer;
+    margin-top: -3px;
+  }
+    & input[type='radio'] + label:before
+  , & input[type='checkbox'] + label:before
+  {
+    content: '';
+    height: 20px;
+    width: 20px;
+    display: inline-block;
+    outline: none;
+    position: relative;
+    top: 4px;
+  }
+  & input[type='radio'] + label:before
+  {
+    background: transparent url(../../web/img/radio.png) no-repeat 0 0;
+  }
+  & input[type='checkbox'] + label:before
+  {
+    background: transparent url(../../web/img/checkbox.png) no-repeat 0 0;
+  }
+    & input[type='radio']:checked + label:before
+  , & input[type='checkbox']:checked + label:before
+  {
+    background-position: 0 -20px;
+  }
+    & input[type='radio'][disabled] + label:before
+  , & input[type='checkbox'][disabled] + label:before
+  {
+    background-position: 0 -40px;
+  }
+    & input[type='radio'][disabled]:checked + label:before
+  , & input[type='checkbox'][disabled]:checked + label:before
+  {
+    background-position: 0 -60px;
+  }
+
+  & .dategroup input
+  {
+    width: 50px;
+
+    &:last-child
+    {
+      width: 70px;
+    }
+  }
+
+  & .timegroup input
+  {
+    width: 50px;
+  }
+
+  fieldset
+  {
+    display: block;
+    border: 1px solid #999;
+  }
+
+  & .whwp-errors
+  {
+    padding-top: 5px;
+    padding-left: 230px;
+
+    @media(max-width: 650px)
+    {
+      &
+      {
+        padding-left: 0;
+      }
+    }
+  }
+}
+
+
+.wh-form__fieldgroup--required > .wh-form__label:after
+{
+  content: "*";
+}
+
+/**/
+.wh-form .formtitle
+{
+  display: block;
+  margin: -20px -20px 20px;
+  font: normal 24px/28px "Barlow", Sans-Serif, Arial;
+  padding: 0 0 10px;
+  background-color: #fff;
+}
+.wh-form .formintro
+{
+  font: normal 15px/22px "Barlow", Sans-Serif, Arial;
+  color: #555;
+  padding-bottom: 20px;
+}
+.wh-form
+{
+  background-color: #f6f6f6;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+@media (max-width:600px)
+{
+  .wh-form
+  {
+    padding: 10px;
+  }
+  .wh-form .formtitle
+  {
+    margin: -10px -10px 10px;
+  }
+}
+
+.wh-form .wh-pulldown
+{
+  height: 38px;
+  border-radius: 0;
+  border: 1px solid #999;
+  line-height: 20px;
+  font-size: 15px;
+/*   -webkit-appearance: none; */
+  background-color: #fff;
+}
+
+  .wh-form input
+, .wh-form textarea
+{
+  outline: none;
+  -webkit-appearance:none;
+}
+
+  .wh-form__fieldgroup + .wh-form__fieldgroup
+, .wh-form__captchagroup
+{
+  margin-top: 10px;
+}
+
+  .wh-form__fieldgroup--textarea > label
+, .wh-form__fieldgroup--captcha > label
+{
+  align-self: flex-start; /* fix for safari */
+  padding-top: 5px;
+}
+
+  .wh-form input[type='text']
+, .wh-form input[type='password']
+, .wh-form input[type='email']
+, .wh-form input[type='url']
+, .wh-form input[type='number']
+, .wh-form textarea
+{
+  height: 38px;
+  border-radius: 0;
+  border: 1px solid #999;
+  line-height: 20px;
+  font-size: 15px;
+  padding: 9px 10px;
+  width: 100%;
+  background-color: #fff;
+}
+  .wh-form input[type='text'].disabled
+, .wh-form input[type='password'].disabled
+, .wh-form input[type='email'].disabled
+, .wh-form input[type='url'].disabled
+, .wh-form input[type='number'].disabled
+{
+  border: 1px solid transparent;
+  background-color: transparent;
+}
+.wh-form textarea
+{
+  resize: none;
+  height: 120px;
+  font-size: 15px;
+  line-height: 20px;
+  font-family: inherit;
+}
+
+.wh-form label
+{
+  float: left;
+  width: 230px;
+  line-height: 20px;
+  padding: 10px 20px 8px 0;
+  text-align: right;
+  display: block;
+  font-weight: 500;
+}
+
+.wh-form__fieldgroup--radiogroup
+{
+  .wh-form__fieldline input[type='radio'] + label
+  {
+    width: 20px;
+  }
+
+   .wh-form__optiondata label
+  {
+    padding-left: 20px;
+  }
+
+  .wh-form__subfield
+  {
+    padding-left: 20px;
+
+    label
+    {
+      display: none;
+
+      & + input[type='text']
+      {
+        width: 100%;
+      }
+    }
+  }
+}
+
+  .wh-form .formgroup-radio > label
+, .wh-form .formgroup-checkbox > label
+{
+  display: block;
+  width: 100%;
+  float: none;
+  text-align: left;
+  font-weight: normal;
+  padding: 10px 20px 0 0;
+}
+
+  .wh-form label + input[type='text']
+, .wh-form label + input[type='password']
+, .wh-form label + input[type='email']
+, .wh-form label + input[type='url']
+, .wh-form label + input[type='number']
+, .wh-form label + .formgroup-radio
+, .wh-form label + .formgroup-checkbox
+, .wh-form label + textarea
+{
+  width: calc(100% - 230px);
+  float: left;
+}
+  .wh-form .invalid > input[type='text']
+, .wh-form .invalid > input[type='password']
+, .wh-form .invalid > input[type='email']
+, .wh-form .invalid > input[type='url']
+, .wh-form .invalid > input[type='number']
+, .wh-form .invalid > textarea
+{
+  border-color: #e41e00;
+}
+
+.wh-form .checkstring
+{
+  padding-left: 230px;
+}
+
+.wh-form .whwp-option input[type='text']
+{
+  margin: 4px 0 0 25px;
+  width: calc(100% - 5px);
+}
+
+.wh-form .error-holder
+{
+  line-height: 20px;
+}
+.wh-form label + input + .error-holder
+{
+  clear: left;
+  padding-left: 230px;
+}
+
+
+.wh-form .fieldgroup
+{
+  position: relative;
+  padding-bottom: 15px;
+}
+.wh-form .fieldgroup:after
+{
+  content: '';
+  display: block;
+  clear: both;
+}
+
+  .wh-form button
+, .wh-form .button
+, .wh-dialog .button
+{
+  -webkit-appearance:none;
+  background-color: #3BA1FA;
+  text-decoration: none;
+  color: #fff;
+  text-transform: uppercase;
+  padding: 13px 30px 11px 11px;
+  height: 42px;
+  display: inline-block;
+  border: 0 none;
+  border-radius: 2px;
+  max-width: 100%;
+  cursor: pointer;
+  text-align: left;
+  font: normal 16px/20px "Barlow", Sans-Serif, Arial;
+  opacity: 1;
+  transition: opacity 0.3s;
+  position: relative;
+  outline: none;
+}
+
+.wh-form__buttongroup
+{
+  padding-top: 15px;
+
+  & .wh-form__button
+  {
+    float: right;
+  }
+
+  & .wh-form__button--previous
+  {
+    float: left;
+  }
+
+  &:after
+  {
+    content: "";
+    display: block;
+    clear: both;
+  }
+}
+
+.wh-form__fieldgroup--checkbox input[type='checkbox'] + label:before
+{
+  left: 40px;
+}
+
+.wh-form__optiondata label
+{
+  width: 100%;
+  padding-left: 40px;
+  text-align: left;
+}
+
+  .wh-form button.inline
+, .wh-form .button.inline
+, .wh-dialog .button
+{
+  display: inline-block;
+  width: auto;
+}
+  .wh-form button:hover
+, .wh-form .button:hover
+, .wh-dialog .button:hover
+{
+  opacity: 0.8;
+}
+  .wh-form button:after
+, .wh-form .button:after
+, .wh-dialog .button:after
+{
+  display: inline-block;
+  font: normal normal normal 14px/1 FontAwesome;
+  font-size: inherit;
+  text-rendering: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  content: "\f105";
+  font-size: 26px;
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  margin-top: -13px;
+}
+  .wh-form button.previous
+, .wh-form .button.previous
+{
+  text-align: right;
+  padding: 11px 11px 11px 30px;
+}
+  .wh-form button.previous:after
+, .wh-form .button.previous:after
+{
+  content: "\f104";
+  right: auto;
+  left: 12px;
+}
+
+.wh-form .formsubmit
+{
+  text-align: right;
+}
+.wh-form .formsubmit:after
+{
+  clear: both;
+  content: '';
+  display: block;
+}
+.wh-form .formsubmit button + button
+{
+  margin-left: 15px;
+}
+.wh-form .formsubmit.indentleft
+{
+  padding-left: 230px;
+}
+
+@media (max-width:650px)
+{
+  .wh-form label
+  {
+    float: none;
+    display: block;
+    text-align: left;
+    width: auto;
+    padding-top: 0;
+    padding-bottom: 3px;
+  }
+    .wh-form label + input[type='text']
+  , .wh-form label + input[type='password']
+  , .wh-form label + input[type='email']
+  , .wh-form label + .formgroup-radio
+  , .wh-form label + .formgroup-checkbox
+  , .wh-form label + textarea
+  {
+    width: 100%;
+    float: none;
+  }
+
+  .wh-form__fieldgroup
+  {
+    display: block !important;
+
+    & > label
+    {
+      display: block;
+    }
+
+    & .wh-form__fields
+    {
+      flex: none;
+      display: block;
+      width: 100%;
+    }
+  }
+
+  .wh-form__fieldgroup--checkbox input[type='checkbox'] + label:before
+  {
+    left: 0;
+  }
+
+  .wh-form__optiondata label
+  {
+    padding-left: 0;
+  }
+
+  .wh-form label + .whwp-formgroup
+  {
+    margin-top: -8px;
+  }
+  .wh-form .formsubmit.indentleft
+  {
+    padding-left: 0;
+  }
+  .wh-form .checkstring
+  {
+    padding-left: 0;
+  }
+}

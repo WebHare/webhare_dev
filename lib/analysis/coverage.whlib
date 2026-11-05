@@ -1,0 +1,139 @@
+<?wh
+
+LOADLIB "mod::devkit/lib/sourcecodeindex/comments.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/fs.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/harescript.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/processing.whlib";
+LOADLIB "mod::devkit/lib/sourcecodeindex/sourcefiles.whlib";
+
+
+BOOLEAN FUNCTION TestSymbol(OBJECT fs, OBJECT mysource, STRING resourcename, RECORD symbol)
+{
+  IF (NOT RecordExists(symbol.comment))
+    RETURN FALSE;
+
+  RECORD parsed := ParseCommentToken(symbol.comment, CELL[ symbol.symboltype, fulldocumentation := TRUE ]);
+
+  parsed := CheckHarescriptSymbolParsedComment(resourcename, symbol, parsed, CELL[ fulldocumentation := TRUE ]);
+  parsed.errors := SELECT *, resourcename := resourcename FROM parsed.errors;
+  parsed.warnings := SELECT *, resourcename := resourcename FROM parsed.warnings;
+
+  parsed := ExpandSymbolCellDefs(fs, resourcename, CELL[ symbol.name, symbol.symboltype, definition := symbol ], parsed, mysource, CELL[ fulldocumentation := TRUE ]);
+
+  RETURN LENGTH(parsed.errors) = 0;
+}
+
+RECORD ARRAY FUNCTION ProcessSubSymbols(OBJECT fs, OBJECT mysource, RECORD rec, RECORD ARRAY syms)
+{
+  RECORD ARRAY pubsyms;
+  FOREVERY (RECORD mrec FROM syms)
+  {
+    IF (NOT mrec.definition.ispublic OR mrec.name LIKE "__*")
+      CONTINUE;
+    IF (CellExists(mrec.definition, "ISUPDATE") AND mrec.definition.isupdate)
+      CONTINUE;
+
+    IF(RecordExists(mrec.definition.comment) AND ToUppercase(mrec.definition.comment.token) LIKE "*@PRIVATE*")
+    {
+      IF(RecordExists(ParseCommentToken(mrec.definition.comment, CELL[ mrec.symboltype ]).markedprivate))
+        CONTINUE; //this symbol explictly doesn't want to be documented
+    }
+
+    INSERT CELL [...mrec
+                , isdocumented := RecordExists(mrec.definition.comment)
+                , iscorrectlydocumented := TestSymbol(fs, mysource, rec.resourcename, mrec.definition)
+                ] INTO pubsyms AT END;
+  }
+  RETURN pubsyms;
+}
+
+RECORD FUNCTION ProcessObjectSymbol(OBJECT fs, OBJECT mysource, RECORD rec)
+{
+  rec.definition.members :=    ProcessSubSymbols(fs, mysource, rec, rec.definition.members);
+  rec.definition.properties := ProcessSubSymbols(fs, mysource, rec, rec.definition.properties);
+  rec.definition.methods :=    ProcessSubSymbols(fs, mysource, rec, rec.definition.methods);
+
+  /* FIXME when blaming at library level, we don't need to count base objects, unless they fill in for documentation we were missing above
+  IF (rec.definition.baseobject != "")
+  {
+    RECORD basetype :=
+        SELECT *
+          FROM GetCompiledLibraryObjectTypes(rec.resourcename)
+         WHERE ToUppercase(name) = ToUppercase(rec.definition.baseobject);
+
+    IF (NOT RecordExists(basetype))
+      RETURN;
+
+    STRING importlib := basetype.importfrom ?? rec.resourcename;
+    RECORD orgdef := CELL[ mysource->FindOriginalDefinition(importlib, basetype.name).resourcename, basetype.name ];
+    RECORD pos := RecordLowerBound(objtypes, orgdef, [ "resourcename", "name" ]);
+    IF (NOT pos.found)
+    {
+      basetypes := basetypes + 1;
+      INSERT orgdef INTO objtypes AT pos.position;
+      STRING baseref := `${orgdef.resourcename}#${orgdef.name}`;
+      //PRINT(`baseref: ${baseref}\n`);
+      RECORD symbol := source->GetSymbolDefinition(baseref);
+
+      IF (RecordExists(symbol.definition.comment))
+      {
+        documented := documented + 1;
+        IF (TestSymbol(source, orgdef.resourcename, rec.definition))
+          correct := correct + 1;
+      }
+
+      ProcessObjectSymbol(symbol);
+    }
+  }
+  */
+
+  rec.subsymbols := rec.definition.members CONCAT rec.definition.properties CONCAT rec.definition.methods;
+  RETURN rec;
+}
+
+PUBLIC RECORD ARRAY FUNCTION AnalyzeSymbolDocumentation()
+{
+  OBJECT fs := NEW DevFileSystem;
+  OBJECT source := NEW SourceIndex(GetIndexModules(TRUE), fs);
+
+  RECORD ARRAY symbols := SELECT *, subsymbols := DEFAULT RECORD ARRAY
+                            FROM source->GetPublicSymbols();
+
+  RECORD ARRAY objtypes :=
+      SELECT resourcename
+           , name
+        FROM symbols
+       WHERE symboltype = "objecttype"
+    ORDER BY resourcename, name;
+
+  //INTEGER correct, documented, members, basetypes;
+
+  FOREVERY (RECORD rec FROM symbols)
+    IF(rec.symboltype = "objecttype")
+      symbols[#rec] := ProcessObjectSymbol(fs, source, rec);
+
+  symbols := SELECT *
+                  , isdocumented := RecordExists(symbols.definition.comment)
+                  , iscorrectlydocumented := TestSymbol(fs, source, symbols.resourcename, symbols.definition)
+              FROM symbols;
+
+  RETURN symbols;
+}
+
+PUBLIC RECORD ARRAY FUNCTION CalcSymbolCountersPerLib(RECORD ARRAY symbols)
+{
+  symbols := SELECT *
+                  , deepstats := RECORD(SELECT subsymbols    := COUNT(*)
+                                             , subdocumented := SUM(isdocumented ? 1 : 0)
+                                             , subcorrect    := SUM(iscorrectlydocumented ? 1 : 0)
+                                          FROM subsymbols) ?? [ subsymbols := 0, subdocumented := 0, subcorrect := 0 ]
+               FROM symbols;
+
+  RECORD ARRAY perlib := SELECT resourcename
+                              , numsymbols         := COUNT(*) + SUM(deepstats.subsymbols)
+                              , numdocumented      := SUM(isdocumented ? 1 : 0) + SUM(deepstats.subdocumented)
+                              , numcorrect         := SUM(iscorrectlydocumented ? 1 : 0) + SUM(deepstats.subcorrect)
+                           FROM symbols
+                        GROUP BY resourcename;
+ RETURN perlib;
+}

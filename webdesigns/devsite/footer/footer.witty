@@ -1,0 +1,19 @@
+[component footer]
+  <footer>
+    <div class="bottomnav">
+      <div class="centercontainer">
+
+        <nav id="metanav">
+          [if footernav]
+            <div class="footernav">
+              [forevery footernav]
+                <a href="[url]" [if not first]class="hidemobile"[/if]>[title]</a>
+              [/forevery]
+            </div>
+          [/if]
+        </nav>
+
+      </div>
+    </div>
+  </footer>
+[/component]

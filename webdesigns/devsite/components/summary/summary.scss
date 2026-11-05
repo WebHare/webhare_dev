@@ -1,0 +1,241 @@
+@import "../../shared/config";
+
+ul.summary
+{
+  list-style-type: none;
+  margin: 0 0 0 -30px;
+  padding: 0;
+  width: auto;
+
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+
+  flex-flow: row;
+  flex-wrap: wrap;
+
+  & > li
+  {
+    flex: 1 1 33.3333%;
+    max-width: 33.3333%;
+    padding: 0 0 30px 30px;
+
+    &.summary--withsubitems
+    {
+      margin-top: 30px;
+      position: relative;
+      padding-top: 15px;
+
+      &::before
+      {
+        content: "";
+        display: block;
+        position: absolute;
+        left: 30px;
+        right: 0;
+        top: 0;
+        border-top: 1px solid #c7c7c7;
+      }
+
+      & > a
+      {
+        font-family: "Barlow", Sans-Serif, Arial;
+        font-size: 20px;
+        line-height: 22px;
+        display: block;
+        color: #010101;
+      }
+
+      .description
+      {
+        display: block;
+        font-size: 14px;
+        padding: 2px 0 5px;
+      }
+
+      ul
+      {
+        margin: 0;
+        list-style-type: none;
+        padding: 5px 0 0;
+        font-size: 14px;
+
+        & > li
+        {
+          padding-top: 5px;
+        }
+      }
+    }
+
+    &.summary--thumbs
+    {
+      display: -webkit-flex;
+      display: -ms-flexbox;
+      display: flex;
+
+      transition: transform 0.2s, opacity 0.2s;
+      transform: scale(1,1);
+      opacity: 1;
+    }
+
+    &.summary--thumbs > a
+    {
+      display: block;
+      position: relative;
+      text-decoration: none;
+      width: 100%;
+      color: inherit;
+      font-family: "Barlow", Sans-Serif, Arial;
+      font-size: 20px;
+      line-height: 22px;
+      transform: translate3d(0,0,0);
+
+      & .image
+      {
+        display: block;
+        position: relative;
+        background-color: #{$color_webhareblue};
+        background-repeat: no-repeat;
+        background-position: 50% 50%;
+        background-size: 25%;
+        overflow: hidden;
+
+        &:before
+        {
+          content: '';
+          display: block;
+          background-color: inherit;
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          opacity: 0;
+          z-index: -1;/* on top */
+          transition: opacity 0.3s;
+        }
+
+        &.image--placeholder
+        {
+          background-image: url(../../web/img/hare-white.png);
+        }
+
+        & > img
+        {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          transition: transform 0.3s, opacity 1s;
+        }
+
+        &:after
+        {
+          content: '';
+          padding-top: 54.5454545454545%;
+          display: block;
+        }
+      }
+
+      &:hover .image:before
+      {
+        z-index: 1;
+        opacity: 0.7;
+      }
+
+      &:hover .image > img
+      {
+        transform: scale(1.1, 1.1);
+      }
+
+      &:hover .image--placeholder
+      {
+        background-size: 40%;
+        background-image: url(../../web/img/hare_ani.gif);
+      }
+
+      & .title
+      {
+        padding-top: 10px;
+        font-weight: 500;
+        display: block;
+      }
+
+      & .description
+      {
+        padding-top: 2px;
+        font-weight: 200;
+        display: block;
+        font-size: 16px;
+      }
+      & .date
+      {
+        font-size: 14px;
+        color: #999;
+      }
+    }
+  }
+
+  @media(max-width: 650px)
+  {
+    & > li
+    {
+      flex: 1 1 50%;
+      max-width: 50%;
+    }
+  }
+
+  @media(max-width: #{$mobile_width_max})
+  {
+    &
+    {
+      display: block;
+    }
+
+    & > li
+    {
+      flex: 1 1 100%;
+      max-width: 100%;
+
+      min-height: 20vw;
+      margin-bottom: 15px;
+
+      &.summary--thumbs a
+      {
+        padding-left: calc(20vw + 15px);
+
+        & .image
+        {
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 20vw;
+          height: 20vw;
+
+          &.image--placeholder
+          {
+            background-size: 50%;
+          }
+
+          & > img
+          {
+            height: 100%;
+            width: auto;
+            left: -9999px;
+            right: -9999px;
+            margin: 0 auto;
+          }
+        }
+
+        &:hover .image--placeholder
+        {
+          background-size: 60%;
+        }
+      }
+    }
+  }
+}

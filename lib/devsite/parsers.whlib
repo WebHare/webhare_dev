@@ -1,0 +1,15 @@
+<?wh
+
+LOADLIB "wh::filetypes/markdown.whlib";
+LOADLIB "wh::xml/dom.whlib";
+LOADLIB "wh::xml/xsd.whlib";
+
+CONSTANT STRING ns_topic := "http://www.webhare.net/xmlns/dev/topic";
+
+PUBLIC STRING FUNCTION GetMDTitle(RECORD markdown)
+{
+  RECORD firstheading1 := SELECT * FROM markdown.children WHERE type IN [ "setextheading", "atxheading" ] AND level = 1;
+  IF (RecordExists(firstheading1))
+    RETURN RenderMarkdownToText(firstheading1);
+  RETURN "";
+}
