@@ -23,3 +23,5 @@ Discussion and questions about code are welcome on https://github.com/WebHare/we
 to ask others to write code for you, or to ask for help with your own code. It's strictly meant to discuss the content in the repository.
 
 If the issue you want to discuss is sensitive or may be a security issue that shouldn't tbe discussed in public, contact security@webhare.nl instead.
+
+See [doc/] for more information about the module's internals

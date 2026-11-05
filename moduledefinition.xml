@@ -1,0 +1,18 @@
+<module xmlns="http://www.webhare.net/xmlns/system/moduledefinition">
+
+  <meta>
+    <version>1.0.0</version>
+    <description>webhare.dev site</description>
+    <packaging download="true" webhareversion=">= 6.0.0">
+    </packaging>
+    <validation options="perfectcompile nomissingtids">
+      <format masks="*.ts" />
+    </validation>
+  </meta>
+
+  <servicemanager>
+    <task tag="import_repo" script="scripts/tasks/import-repo.ts" description="Import the webhare_dev repository checkout" />
+    <task tag="update_from_github" runat="*/5 * * * *" runatstartup="true" script="scripts/tasks/update-from-github.ts"
+          description="Keep the webhare_dev main branch checkout up to date from GitHub" />
+  </servicemanager>
+</module>
