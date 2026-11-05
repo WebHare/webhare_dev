@@ -122,4 +122,4 @@ Safe migration order for moving a schema to another module:
 - After editing a moduledefinition.xml `<wrdschemas>` section or a `*.wrdschema.xml` definition file, run `wh apply config` to regenerate the TypeScript bindings, including the legacy `wh:wrd/<module>` exports and modern `WRDSchemaLike` registrations.
 - To actually apply the schema definition to the database (create/alter tables, run the autocreate check), run `wh apply wrd` (or `wh apply all`). This also happens automatically on module install and WebHare restart.
 
-See also: the `directory-structure` skill for general `<modulename>:<tag>` / `mod::` resolution, and the `modules` skill for moduledefinition.xml conventions (runonce scripts, dependencies, module merges).
+See also: the `directory-structure` skill for general `<modulename>:<tag>` / `mod::` resolution, and the `modules` skill for moduledefinition.xml conventions (runonce scripts, dependencies, module merges). For `<migration>` elements in `*.wrdschema.xml` files (converting data or renaming types/attributes during schema updates), see the [WRD migrations skill](../wrd-migrations/SKILL.md).
