@@ -1,0 +1,58 @@
+name: Module CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+env:
+  # testcontainer.sh uses CI_PROJECT_DIR to locate the module (and derives the module name from its basename)
+  CI_PROJECT_DIR: ${{ github.workspace }}
+  CI_COMMIT_SHA: ${{ github.sha }}
+  # Branch name. testcontainer.sh uses it to pick matching branches of dependency modules
+  CI_COMMIT_REF_NAME: ${{ github.head_ref || github.ref_name }}
+  CI_PIPELINE_ID: ${{ github.run_id }}
+  TESTFW_WEBHARE_ENABLE_DEVKIT: 1
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+concurrency: # cancel older workflows when a new push is done on a branch. but workflow_dispatch run shouldn't conflict with normal jobs
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}-${{ github.event_name == 'workflow_dispatch' && github.run_id || 'automatic' }}
+  cancel-in-progress: true
+
+jobs:
+  runtest-vs-main:
+    name: Test against WebHare main
+    # See https://github.com/actions/runner-images. Fork PRs never get our own runners
+    runs-on: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name) && vars.WHBUILD_RUNNER && fromJSON(vars.WHBUILD_RUNNER) || 'ubuntu-26.04' }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          submodules: recursive
+      - name: Run module tests
+        run: curl -s https://build.webhare.dev/ci/scripts/testmodule.sh | bash -s -- --podman -w main
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: runtest-vs-main-artifacts
+          path: artifacts/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # we need this step for our GitHub approval settings to have some clear check they can require
+  all-tests-passed:
+    needs: [runtest-vs-main]
+    # The gate must run even when a dependency fails so the required check reports failure rather than skipped.
+    if: always()
+    runs-on: ${{ github.event.pull_request.head.repo.full_name == github.event.pull_request.base.repo.full_name && vars.WHBUILD_RUNNER && fromJSON(vars.WHBUILD_RUNNER) || 'ubuntu-26.04' }}
+    steps:
+      - name: Verify all tests passed
+        if: >-
+          needs.runtest-vs-main.result != 'success'
+        run: exit 1
+      - run: echo "All tests passed successfully."
