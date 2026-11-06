@@ -34,6 +34,36 @@ Test functions should be defined in the source file in roughly the same order as
 (or `RunTestframework()` in HareScript tests), so the file reads top to bottom in execution order. When adding a new
 test function, insert it at the position matching where it's added to the array.
 
+## Structuring a test function into stories
+A test function that goes through several steps should be split into stories: each one a scenario
+that verifies one behavior. Start each story with a header comment:
+
+```typescript
+async function testPeerServerToken() {
+  const testsite = await test.getTestSiteJS();
+
+  ////////////////////////////////////////////////////////////////
+  // STORY: Request a token, registering ourselves as a dynamic client at the remote
+  const { requesturl, tokenpromise } = await getPeerServerTokenURL(testsite.webRoot);
+  ...
+
+  ////////////////////////////////////////////////////////////////
+  // STORY: Verify the token gives us access to the WebHare API as the user that approved it
+  ...
+}
+```
+
+- Use a line of slashes, then `// STORY: <description>`. Phrase the description as what happens or what's verified
+  ("Deleting the client invalidates its registration token"), not as a section name ("Cleanup checks").
+- Put shared setup (looking up the test site, opening schemas) before the first story.
+- A story can rely on state left by the stories before it. Keep them in the order they happen.
+- Use stories for the steps inside a test function. Use separate functions in `test.runTests()` for independent
+  areas that you might want to run, or see fail, separately.
+- Put a short comment above the test function saying what it verifies overall, especially if the setup is unusual
+  (eg. "We act as our own peer: the testsite is the 'remote' WebHare").
+- When you extend an existing test, add a new story or test function rather than mixing new checks into an
+  unrelated story.
+
 ## Key Testing Functions
 
 ### test.eq(expected, actual[, annotation])
