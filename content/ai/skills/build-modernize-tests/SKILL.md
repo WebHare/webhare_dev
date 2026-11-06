@@ -13,18 +13,27 @@ Tollium frontend tests should additionaly import `@mod-tollium/js/tolliumtest` a
 
 Old tollium tests may keep using `@mod-tollium/js/testframework`
 
+A string before a function sets that test's name. When no string is given, the function's own name is used
+as the name, so don't add a string that just restates the function name: `"testFeature", testFeature` adds
+nothing over `testFeature` on its own. Use a string only when it carries more than the function name does — a
+fuller description of what is verified — or to name a function that otherwise has no usable name, such as an
+anonymous or `.bind()`-ed function.
+
 It's okay to have multiple function calls between strings in the array passed to runTests.
 
 Eg
 
 ```typescript
 test.runTests([
-  "Setup",
   setup,
 
-  "Test feature",
-  testFeature,
-  testAnotherFeature
+  testCreateUser,
+  testUpdateUser,
+
+  "Granting a role the user cannot manage is refused",
+  testRoleGrantPermissions,
+
+  "logs in and redirects to the target", login.bind(null, "/target"),
 ]);
 ```
 
