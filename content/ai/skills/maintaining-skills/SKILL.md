@@ -36,15 +36,15 @@ implementation happens to live:
 1. Check that the skill files you're about to change have no uncommitted
    changes (`git status -- <skill directory>`). If they do, ask the user
    whether to proceed before you edit them.
-2. Read the relevant skill and its neighboring skills. Search for overlapping
+1. Read the relevant skill and its neighboring skills. Search for overlapping
    instructions and follow existing links before creating a new skill.
-3. Verify technical details against the current source, schemas, tests, and
+1. Verify technical details against the current source, schemas, tests, and
    established workflows. A plausible convention is not enough; skills should
    distinguish verified behavior from assumptions or version-dependent details.
-4. Identify the task boundary. Prefer one focused skill for a coherent workflow;
+1. Identify the task boundary. Prefer one focused skill for a coherent workflow;
    use links to related skills for shared prerequisites instead of repeating
    their full instructions.
-5. Keep module-facing instructions portable. Do not rely on an individual
+1. Keep module-facing instructions portable. Do not rely on an individual
    developer's installation, local hostname, checkout path, or unverified
    environment state.
 
@@ -90,6 +90,9 @@ content/ai/skills/<skill-name>/
 - Write a concise, keyword-rich `description` that says what the skill does
   and when to load it. Include the terms a developer is likely to use when
   asking for the task; avoid vague descriptions or an overly broad trigger.
+- Number every item in an ordered Markdown list `1.`. Markdown still renders
+  ascending numbers, and inserting or removing an item doesn't renumber (and
+  so change) the lines after it.
 - Keep the main `SKILL.md` focused and under 500 lines. Put substantial
   reference material in `references/` and link to it with a relative path.
 - Make the procedure usable on its own: explain the goal, applicable scope,
