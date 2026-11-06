@@ -29,6 +29,7 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 - read HareScript object properties with `await obj.$get<T>("property")`, not `obj.property`
 - write HareScript object properties with `await obj.$set("property", value)`, not `obj.property = value`
 - when a blob comes from HareScript via `HSVMObject.$get` or as a return value, type it as `HSVMBlob` (from `@webhare/harescript/src/wasm-hsvmvar`), not `WebHareBlob`
+- when converting WRD code, use the translation table in the [wrd-in-harescript skill](../wrd-in-harescript/SKILL.md#translating-to-typescript): history mode and case-matching defaults differ between the HareScript and TypeScript APIs
 - when using generated WRD TypeScript schemas, map snake_case HareScript fields to camelCase TS fields (example: sfad_moments -> sfadMoments)
 - map HS WRD event mask calls to TypeScript as: `wrdschema->^wrdtype->GetEventMasks()` -> `schema.getEventMasks("wrdtype")`
 - map HS HTML encoding to TypeScript as: `EncodeHTML(x)` -> `encodeString(x, "html")` from @webhare/std
