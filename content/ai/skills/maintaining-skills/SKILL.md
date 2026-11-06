@@ -33,15 +33,18 @@ implementation happens to live:
 
 ## Inspect before editing
 
-1. Read the relevant skill and its neighboring skills. Search for overlapping
+1. Check that the skill files you're about to change have no uncommitted
+   changes (`git status -- <skill directory>`). If they do, ask the user
+   whether to proceed before you edit them.
+2. Read the relevant skill and its neighboring skills. Search for overlapping
    instructions and follow existing links before creating a new skill.
-2. Verify technical details against the current source, schemas, tests, and
+3. Verify technical details against the current source, schemas, tests, and
    established workflows. A plausible convention is not enough; skills should
    distinguish verified behavior from assumptions or version-dependent details.
-3. Identify the task boundary. Prefer one focused skill for a coherent workflow;
+4. Identify the task boundary. Prefer one focused skill for a coherent workflow;
    use links to related skills for shared prerequisites instead of repeating
    their full instructions.
-4. Keep module-facing instructions portable. Do not rely on an individual
+5. Keep module-facing instructions portable. Do not rely on an individual
    developer's installation, local hostname, checkout path, or unverified
    environment state.
 
@@ -114,6 +117,18 @@ content/ai/skills/<skill-name>/
   redundant examples, and rules already covered by a linked skill.
 - Update affected cross-links when a skill is renamed, split, or removed.
 
+## Commit each skill change
+
+Commit a skill change right after you make it, in whichever repository holds
+the skill, and include only the skill files you changed. If you can't commit
+(eg. the repository is in the middle of a merge or rebase, or the files also
+contain someone else's uncommitted changes), tell the user that the change is
+still uncommitted.
+
+The commit message should explain what changed and *why*: what prompted the
+change, and the reasoning or context behind it that doesn't belong in the skill
+text. The skill says what to do; the commit history records why it says that.
+
 ## Review checklist
 
 Before finishing a skill change, check that:
@@ -127,3 +142,5 @@ Before finishing a skill change, check that:
   workflow.
 - The main file remains concise, with optional references used only when they
   improve progressive loading.
+- The change is committed on its own with a message explaining why, or the
+  user has been told it isn't.
