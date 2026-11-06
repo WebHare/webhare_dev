@@ -17,13 +17,13 @@ Migrate a command in scripts/whcommands from HareScript to TypeScript while pres
 - success/failure output
 - exit semantics
 
-2. Implement the TypeScript CLI with `@webhare/cli` following the shared [WebHare CLI skill](../webhare-cli/SKILL.md), preserving the command's existing interface and behavior.
+1. Implement the TypeScript CLI with `@webhare/cli` following the shared [WebHare CLI skill](../webhare-cli/SKILL.md), preserving the command's existing interface and behavior.
 
-3. Keep wrapper behavior stable:
+1. Keep wrapper behavior stable:
 - if a .sh wrapper has special-case handling, keep it
 - route migrated paths to TS using wh run when requested by module conventions
 
-4. Apply the generic harescript-to-typescript skill for shared migration rules:
+1. Apply the generic harescript-to-typescript skill for shared migration rules:
 - compatibility behavior preservation
 - loadlib and API-bridging guidance
 - validation and test guidance

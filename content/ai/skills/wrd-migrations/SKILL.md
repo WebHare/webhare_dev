@@ -179,11 +179,11 @@ it actually runs.
 
 1. Create a schema from a definition **without** the migration, and set up
    data in the old shape.
-2. Apply a definition **with** the migration to that existing schema, eg.
+1. Apply a definition **with** the migration to that existing schema, eg.
    `wrdschema->ApplySchemaDefinition([ schemaresource := Resolve("data/after.wrdschema.xml") ])`,
    and verify the converted data and the `GetMigrationStatus` result.
-3. Apply it again and verify the migration does not run a second time.
-4. If you use `revision`, apply a definition with a higher revision and verify
+1. Apply it again and verify the migration does not run a second time.
+1. If you use `revision`, apply a definition with a higher revision and verify
    it runs exactly once more.
 
 The platform's own coverage is in `webhare_testsuite`

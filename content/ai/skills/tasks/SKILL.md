@@ -177,15 +177,15 @@ before each event starts) without polling every minute:
 
 1. Declare a timed task with an infrequent `runat` (for example daily) as a
    safety net.
-2. In each run, process every record that is due. At the end, compute the
+1. In each run, process every record that is due. At the end, compute the
    earliest future due moment and call
    `ScheduleTimedTask("module:tag", [ when := nextmoment ])`. A `when` later
    than an already scheduled run is ignored, so this is safe to call each run.
-3. Wherever the underlying data is edited (for example the `AfterStore` of a
+1. Wherever the underlying data is edited (for example the `AfterStore` of a
    WRD entity edit screen), request a run as soon as possible with
    `ScheduleTimedTask("module:tag")` inside the open work, so the next moment
    is recalculated.
-4. Make each run idempotent: record per item that the action was done (for
+1. Make each run idempotent: record per item that the action was done (for
    example a `...sent` datetime field), and have the actual side effect
    recheck its preconditions, because the data may have changed after it was
    queued.
@@ -205,9 +205,9 @@ first.
 
 1. Confirm the registration shape and options against the current
    `moduledefinition.yml` schema or `moduledefinition.xml` XSD.
-2. Confirm TypeScript imports against the public `@webhare/services` exports;
+1. Confirm TypeScript imports against the public `@webhare/services` exports;
    do not depend on internal SDK paths.
-3. Validate the module and TypeScript task using the repository's normal
+1. Validate the module and TypeScript task using the repository's normal
    module-check and TypeScript validation workflow.
 
 See also the [module definition skill](../modules/SKILL.md) for general

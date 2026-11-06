@@ -26,10 +26,10 @@ Declared under `<servicemanager>`:
 When moving a piece of functionality (eg a WRD schema, a siteprofile, some library code) from module A into module B:
 
 1. Move the underlying file(s) (siteprl.xml, wrdschema.xml, whlib, etc.) into module B's tree.
-2. Move/adjust the moduledefinition.xml declaration referencing it from A to B (see the `wrd` skill for the specific caveats around `<wrdschemas>` and `autocreate`).
-3. Update every literal cross-reference to the old `module:tag` / import path across the whole workspace, not just within the moved module - grep for the old identifier, since consuming code can live in any other module.
-4. If code in module A now references something owned by module B (eg `OpenWRDSchema("B:tag")` or a TypeScript import from `wh:wrd/B`), double check whether A needs a new `<dependency>` on B (existing code in the same module may already imply this dependency is fine without an explicit `<dependency>` entry - check for precedent before adding one).
-5. Run `wh apply config` after touching moduledefinition.xml (regenerates generated TypeScript types/bindings). If a `<wrdschemas>` or `*.wrdschema.xml` was touched, also run `wh apply wrd` (or `wh apply all`) - see the `wrd` skill for what each command does and when it runs automatically.
+1. Move/adjust the moduledefinition.xml declaration referencing it from A to B (see the `wrd` skill for the specific caveats around `<wrdschemas>` and `autocreate`).
+1. Update every literal cross-reference to the old `module:tag` / import path across the whole workspace, not just within the moved module - grep for the old identifier, since consuming code can live in any other module.
+1. If code in module A now references something owned by module B (eg `OpenWRDSchema("B:tag")` or a TypeScript import from `wh:wrd/B`), double check whether A needs a new `<dependency>` on B (existing code in the same module may already imply this dependency is fine without an explicit `<dependency>` entry - check for precedent before adding one).
+1. Run `wh apply config` after touching moduledefinition.xml (regenerates generated TypeScript types/bindings). If a `<wrdschemas>` or `*.wrdschema.xml` was touched, also run `wh apply wrd` (or `wh apply all`) - see the `wrd` skill for what each command does and when it runs automatically.
 
 See also: the `directory-structure` skill for how `<modulename>:<tag>` and `mod::` references resolve in general, and the `wrd` skill for WRD schema specifics.
 

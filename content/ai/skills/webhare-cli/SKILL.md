@@ -58,11 +58,11 @@ runCli({
 ## Migrate a Commander command
 
 1. Read the whole command and record its positional arguments, options, flags, aliases, defaults, subcommands, help behavior, output, and error/exit semantics.
-2. Replace the `commander` import and `program` setup with `runCli` from `@webhare/cli`.
-3. Map the chained `.name()`, `.argument()`, `.option()`, and `.parse()` declarations to the corresponding command configuration, keeping their behavior.
-4. Move the old `main` implementation into `runCli`'s `main` callback. Remove a separate top-level `main()` call.
-5. If the file is safe for command discovery/autocomplete, add the exact `// @webhare/cli: <short description>` header. If the old file has a `//short:` description, use that text and remove the old comment.
-6. Validate the converted command's syntax, help, output, and exit codes against the original behavior.
+1. Replace the `commander` import and `program` setup with `runCli` from `@webhare/cli`.
+1. Map the chained `.name()`, `.argument()`, `.option()`, and `.parse()` declarations to the corresponding command configuration, keeping their behavior.
+1. Move the old `main` implementation into `runCli`'s `main` callback. Remove a separate top-level `main()` call.
+1. If the file is safe for command discovery/autocomplete, add the exact `// @webhare/cli: <short description>` header. If the old file has a `//short:` description, use that text and remove the old comment.
+1. Validate the converted command's syntax, help, output, and exit codes against the original behavior.
 
 ## Read filename arguments and stdin
 

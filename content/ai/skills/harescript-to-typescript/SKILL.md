@@ -18,7 +18,7 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 - errors and warnings
 - exit/status behavior (for scripts)
 
-2. Map HareScript APIs to TypeScript equivalents:
+1. Map HareScript APIs to TypeScript equivalents:
 - prefer @webhare/harescript loadlib bridges where direct TS APIs are not available yet
 - before adding a bridge, check nearby TypeScript tests and SDK exports for an existing API. For example, `AuthenticationSettings.fromPasswordHash(hash)` from `@webhare/wrd` replaces `CreateAuthenticationSettingsFromPasswordHash`; see `tests/wrd/nodejs/test_wrd_auth.ts`.
 - NEVER loadlib a `.whscr` file. `.whscr` files are executable scripts containing top-level code that executes upon import, causing unwanted side effects. Only `loadlib` `.whlib` files. If logic in a `.whscr` is needed, port it directly to TypeScript or move it to a `.whlib`
@@ -33,7 +33,7 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 - map HS WRD event mask calls to TypeScript as: `wrdschema->^wrdtype->GetEventMasks()` -> `schema.getEventMasks("wrdtype")`
 - map HS HTML encoding to TypeScript as: `EncodeHTML(x)` -> `encodeString(x, "html")` from @webhare/std
 
-3. Implement TypeScript incrementally:
+1. Implement TypeScript incrementally:
 - keep function boundaries small
 - preserve error text where it is user-visible
 - preserve observable ordering where relevant
@@ -49,7 +49,7 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 - preserve explicit HS output column aliases (example: `id := "WRD_ID"`) by adding a TS mapping step (for example map `wrdId` to `id`) before downstream logic uses that alias
 - when TS output is consumed by remaining HS code and nullable dates are inconvenient, use @webhare/hscompat defaults (`defaultDateTime` for Date, `defaultDateTime.toTemporalInstant()` for Temporal.Instant) to preserve HS `DEFAULT DATETIME` semantics
 
-4. Validate compatibility:
+1. Validate compatibility:
 - inspect side effects and the intended target before executing a migrated script. A development DTAP stage is not proof that a server is disposable.
 - never run `tests/system/twohare/prepare-server2.ts` on a normal WebHare installation, even for validation. It creates a sysop with a known password and enables dynamic client registration; execution is restricted to the isolated second Twohare test server. Use static diagnostics elsewhere, and do not assume `wh run ... --help` is a safe validation shortcut without verifying its execution path.
 - run `wh validate <filename>` on changed .ts files (lint only) and modified HareScript/XML resources
@@ -57,7 +57,7 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 - run `wh runtest <test name or full path>` for relevant tests when practical
 - do not use tsc or npm test as primary verification for WebHare module migrations
 
-5. Rollout cleanup for scheduled tasks:
+1. Rollout cleanup for scheduled tasks:
 - for other migrated scripts, update shell runners and test metadata too, including `testinfo.xml` ignore masks for preparation scripts that must not be discovered as tests.
 - if the migrated HareScript file is referenced by a `<task script="...">` in moduledefinition.xml, update the script path to the new .ts file
 - after updating the reference, offer to delete the original HareScript file; if approved, remove it and verify no references remain

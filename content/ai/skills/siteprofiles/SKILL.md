@@ -114,14 +114,14 @@ assets through the appropriate asset-pack entrypoint.
 ## XML-to-YAML conversion checklist
 
 1. Read the original definitions, apply rules, editors, and all incoming references.
-2. Preserve stored type identity, member meaning, labels, and apply behavior.
-3. Move embedded tabsextensions to `.screens.xml`. Update `tabsExtension`,
+1. Preserve stored type identity, member meaning, labels, and apply behavior.
+1. Move embedded tabsextensions to `.screens.xml`. Update `tabsExtension`,
    `editProps`, and direct `LoadTabsExtension` callers to the new screen path.
-4. Update every include of the old `.siteprl.xml` path. Search again for stale
+1. Update every include of the old `.siteprl.xml` path. Search again for stale
    references before removing it.
-5. Use schema-supported YAML names. Do not carry XML-only attributes over as
+1. Use schema-supported YAML names. Do not carry XML-only attributes over as
    speculative YAML properties.
-6. Validate the result and test editing/storage/rendering, not just parsing.
+1. Validate the result and test editing/storage/rendering, not just parsing.
 
 ## Validation and generated bindings
 

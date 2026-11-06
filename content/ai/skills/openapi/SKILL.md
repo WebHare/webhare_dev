@@ -102,8 +102,8 @@ await client.get("/items", { params: { itemType: "first,second" } });
 ## Validation workflow
 
 1. Edit the YAML specification and implementation.
-2. Run `wh apply config`.
-3. Run `wh validate` on the implementation and affected tests.
-4. Run the narrow OpenAPI test covering the changed operation.
+1. Run `wh apply config`.
+1. Run `wh validate` on the implementation and affected tests.
+1. Run the narrow OpenAPI test covering the changed operation.
 
 Test the omitted optional parameter, each individual filter value, and accepted combinations when behavior differs.

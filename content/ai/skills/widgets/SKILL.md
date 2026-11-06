@@ -123,11 +123,11 @@ standard bridge see it.
 
 1. Validate the siteprofile, screens, changed HareScript, and test files with
    `wh validate`; check TypeScript diagnostics.
-2. Register new tests in the adjacent `testinfo.xml` before using `wh runtest`.
+1. Register new tests in the adjacent `testinfo.xml` before using `wh runtest`.
    Follow the `running-tests` skill and run tests serially.
-3. Test stored field round trips and actual rendered HTML: escaping, rich-text
+1. Test stored field round trips and actual rendered HTML: escaping, rich-text
    formatting, resolved links, missing optional buttons, and runtime metadata.
-4. Run existing affected tests and inspect desktop/mobile layouts for overflow.
+1. Run existing affected tests and inspect desktop/mobile layouts for overflow.
    Verify managed visibility and positioning in the consuming design, not only
    isolated markup.
 

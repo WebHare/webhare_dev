@@ -177,16 +177,16 @@ export async function generatePagesReport(): Promise<SpreadsheetData> {
 
 1. Run `wh apply config` after changing `moduledefinition.yml`; schema errors
    in the `reports` section are reported by `wh check <module>`.
-2. The parsed declarations are written to the `reports` configuration extract
+1. The parsed declarations are written to the `reports` configuration extract
    (`<dataroot>/config/extracts/reports.json`). Check there that the report
    name is qualified and `onGenerate`/`configScreen` resolve to the intended
    `mod::` paths.
-3. Test the generator from a backend test (see
+1. Test the generator from a backend test (see
    [running tests](../running-tests/SKILL.md)), eg asserting on the returned
    `columns` and `rows`. Call it through
    `generateReport(name, params, settings, { langCode })` from
    `@mod-platform/js/reports/reports` to also verify the declaration resolves.
-4. Test the full flow from a Tollium HareScript test: run `RunReportDialog`
+1. Test the full flow from a Tollium HareScript test: run `RunReportDialog`
    with `ExpectScreenChange`, fill in the config screen (if any), click its
    submit button, then capture the download with
    `ExpectSentWebFile(PTR TTClick(":Download"))` and check the rows with

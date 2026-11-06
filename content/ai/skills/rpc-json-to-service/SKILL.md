@@ -12,10 +12,10 @@ server implementation or its wire protocol.
 
 1. Resolve the imported `.rpc.json` relative to its caller and read its
    `services` array, for example `{ "services": ["example:events"] }`.
-2. Resolve each `module:service` pair to the corresponding module's
+1. Resolve each `module:service` pair to the corresponding module's
    `moduledefinition.xml`. Find the `<webservice name="service">` and read its
    `library` and `prefix` attributes. Do not infer these from the caller's alias.
-3. Resolve the library relative to that module, or follow its `mod::` path.
+1. Resolve the library relative to that module, or follow its `mod::` path.
    Inspect the public HareScript functions with the configured prefix (usually
    `RPC_`), including relevant imported libraries. Follow delegated calls far
    enough to establish parameter and response shapes.
@@ -25,20 +25,20 @@ server implementation or its wire protocol.
 1. Create a sibling TypeScript file by replacing `.rpc.json` with `.ts`:
    `services.rpc.json` becomes `services.ts`. Check for an existing file before
    creating or overwriting it.
-2. Export an interface named in UpperCamelCase and ending in `Service`, derived
+1. Export an interface named in UpperCamelCase and ending in `Service`, derived
    from the descriptor's service name, not the import alias. Normalize separators
    and avoid duplicating an existing `Service` suffix.
-3. Include every public prefixed method, not just methods currently called.
+1. Include every public prefixed method, not just methods currently called.
    Remove the prefix and use the existing client-facing lowerCamelCase spelling,
    preserving acronyms (for example `RPC_AddSessionFAQ` becomes `addSessionFAQ`).
-4. Describe the JSON wire types, not HareScript runtime objects. Preserve
+1. Describe the JSON wire types, not HareScript runtime objects. Preserve
    parameter order, optional/defaulted parameters, arrays, nullable records and
    all response branches. Use discriminated unions for success/error or
    valid/invalid responses where appropriate. Every method returns `Promise<T>`,
    including `Promise<void>` for methods without a result.
-5. Reuse accurate shared types where available. Do not hide unknown shapes with
+1. Reuse accurate shared types where available. Do not hide unknown shapes with
    `any`, assertions or broad index signatures; inspect the implementation.
-6. Import and instantiate the client:
+1. Import and instantiate the client:
 
    ```typescript
    import { createClient } from "@webhare/jsonrpc-client";
@@ -60,17 +60,17 @@ server implementation or its wire protocol.
 
 1. Find all references to the same resolved descriptor across the workspace,
    including different relative paths and module aliases.
-2. Replace namespace/default descriptor imports with a default import from the
+1. Replace namespace/default descriptor imports with a default import from the
    new TypeScript file, using the repository's extension convention. Existing
    local aliases can be retained to avoid unrelated call-site churn.
-3. Remove obsolete `@ts-expect-error` or `@ts-ignore` comments above these
+1. Remove obsolete `@ts-expect-error` or `@ts-ignore` comments above these
    imports. Preserve unrelated suppressions.
-4. Use TypeScript diagnostics on the client and every caller to refine the
+1. Use TypeScript diagnostics on the client and every caller to refine the
    interface. Check the server before changing a type to satisfy a caller;
    correct tightly coupled caller types or handling when the server proves them
    wrong. Do not change runtime values or silence errors with casts.
-5. Run focused repository-standard type/lint checks and relevant existing tests
+1. Run focused repository-standard type/lint checks and relevant existing tests
    where practical. Report pre-existing diagnostics separately.
-6. Verify that no callers still reference the old descriptor and that every
+1. Verify that no callers still reference the old descriptor and that every
    public prefixed function is represented. Leave the descriptor in place unless
    its removal is requested or established as safe for all remaining consumers.

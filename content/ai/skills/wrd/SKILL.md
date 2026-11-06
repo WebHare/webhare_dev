@@ -78,10 +78,10 @@ Do not rename unrelated database columns such as `creationdate` merely because a
 ## Migration checklist
 
 1. Search all requested workspace roots for `wh:wrd/...` , including type-only imports and individual entity types. Searching only a few known schema identifiers misses other modules and exports.
-2. Make direct, scoped patches rather than an automated rewrite script. Do not edit generated files manually; regenerate them with `wh apply config` when needed.
-3. Merge `wrd` and `WRDSchemaLike` into existing `@webhare/wrd` imports. Remove redundant aliases that only preserve an old generated type name. If one function accesses the same schema repeatedly, use a function-local descriptive constant such as `configSchema`, `usermgmtSchema`, or `leadsSchema`, not the generic `schema`.
-4. Before removing a `WRDSchema` import, check EVERY constructor use in that file and migrate the remaining uses. Do not mechanically rewrite declarations or generator metadata as though they were executable schema references.
-5. Check TypeScript diagnostics, then run the narrow affected tests using the `running-tests` skill. Editor diagnostics can lag or miss a runtime path; a clean Problems panel is not proof that a removed import has no callers. Recheck diagnostics after dependent types refresh. For module-wide validation, use `wh checkmodule <modulename>` (or the `webhare_checkmodule` tool); it takes longer but checks the whole module, not just the files open in the editor. It complements rather than replaces behavioral tests.
+1. Make direct, scoped patches rather than an automated rewrite script. Do not edit generated files manually; regenerate them with `wh apply config` when needed.
+1. Merge `wrd` and `WRDSchemaLike` into existing `@webhare/wrd` imports. Remove redundant aliases that only preserve an old generated type name. If one function accesses the same schema repeatedly, use a function-local descriptive constant such as `configSchema`, `usermgmtSchema`, or `leadsSchema`, not the generic `schema`.
+1. Before removing a `WRDSchema` import, check EVERY constructor use in that file and migrate the remaining uses. Do not mechanically rewrite declarations or generator metadata as though they were executable schema references.
+1. Check TypeScript diagnostics, then run the narrow affected tests using the `running-tests` skill. Editor diagnostics can lag or miss a runtime path; a clean Problems panel is not proof that a removed import has no callers. Recheck diagnostics after dependent types refresh. For module-wide validation, use `wh checkmodule <modulename>` (or the `webhare_checkmodule` tool); it takes longer but checks the whole module, not just the files open in the editor. It complements rather than replaces behavioral tests.
 
 # Renaming or moving a schema to another module
 
@@ -113,9 +113,9 @@ Consequence: if you move a `<schema>` declaration to a new module/tag and leave 
 
 Safe migration order for moving a schema to another module:
 1. Remove the `<schema>` node from the old module's moduledefinition.xml.
-2. Add the `<schema>` node to the new module's moduledefinition.xml with `autocreate="false"` (leave a comment explaining why), and move the `definitionfile` (the `*.wrdschema.xml`) there too.
-3. Add a `poststart` `<runonce>` script in the new module that renames the still-existing old-named schema to the new `module:tag` (see above).
-4. After the rename has run everywhere (all environments upgraded), flip `autocreate` back to `true` in a follow-up change, so brand-new installs still get the schema auto-created.
+1. Add the `<schema>` node to the new module's moduledefinition.xml with `autocreate="false"` (leave a comment explaining why), and move the `definitionfile` (the `*.wrdschema.xml`) there too.
+1. Add a `poststart` `<runonce>` script in the new module that renames the still-existing old-named schema to the new `module:tag` (see above).
+1. After the rename has run everywhere (all environments upgraded), flip `autocreate` back to `true` in a follow-up change, so brand-new installs still get the schema auto-created.
 
 # Applying changes
 

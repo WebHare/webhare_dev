@@ -217,11 +217,11 @@ service name. Do not re-register or rewrite the service merely to call it.
 1. Find its registration and implementation. Establish its opening arguments,
    callable method names and casing, parameter order, result shapes and error
    behavior. Do not infer the contract from one call site.
-2. Reuse an existing interface or `BackendServices` augmentation. Otherwise
+1. Reuse an existing interface or `BackendServices` augmentation. Otherwise
    define an accurate interface and pass it as the generic, just as above.
-3. Pass the service's existing opening arguments as the second argument and
+1. Pass the service's existing opening arguments as the second argument and
    await every remote call.
-4. Preserve HareScript-compatible data shapes and close the connection.
+1. Preserve HareScript-compatible data shapes and close the connection.
 
 HareScript's `OpenWebHareService` / `RunWebHareService` terminology describes the
 same service mechanism; those are not the APIs to import in TypeScript.
@@ -232,15 +232,15 @@ specific requirements before proposing or extending one.
 ## 6. Apply and verify
 
 1. After changing `moduledefinition.yml`, run `wh apply config`.
-2. Validate the implementation and callers with the repository's TypeScript
+1. Validate the implementation and callers with the repository's TypeScript
    diagnostics and focused validation commands.
-3. Add or run a narrow backend test that opens the **registered** `module:service`
+1. Add or run a narrow backend test that opens the **registered** `module:service`
    and calls a method. Directly constructing the connection class, or testing
    only `runBackendService`, does not verify the YAML wiring.
-4. Check opening arguments when used, the exact returned value/shape, error
+1. Check opening arguments when used, the exact returned value/shape, error
    propagation and connection cleanup. Run WebHare tests serially; use the
    running-tests skill for the local runner workflow.
-5. If testing code changes against an already-running service, ensure that
+1. If testing code changes against an already-running service, ensure that
    process has reloaded/restarted before trusting the result. Applying
    configuration is not proof that an existing process uses the new code.
    Use `wh service restart <module>:<service>` to restart only the relevant
