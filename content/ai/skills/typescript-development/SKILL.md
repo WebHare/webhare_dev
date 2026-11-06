@@ -16,4 +16,5 @@ For specific tasks see:
 - [Command line tools](../webhare-cli/SKILL.md) using `@webhare/cli`.
 - [Managed and timed tasks](../tasks/SKILL.md).
 - [Registry keys](../webhare-registry/SKILL.md) using `readRegistryKey` from `@webhare/services`.
+- [Naming conventions](../naming-conventions/SKILL.md) for identifiers and WebHare terminology.
 - [Building or modernizing tests](../build-modernize-tests/SKILL.md) and [running them](../running-tests/SKILL.md).
