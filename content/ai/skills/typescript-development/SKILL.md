@@ -12,6 +12,14 @@ General guidelines:
   [directory structure skill](../directory-structure/SKILL.md).
 - The TypeScript compiler used by WebHare is the one in the WebHare installation's `whtree/node_modules`.
 
+Linting:
+- WebHare's ESLint configuration (`@webhare/eslint-config`) treats style issues as errors, which fail
+  `wh checkmodule` and CI. In particular, **every file must end with a newline** (`@stylistic/eol-last`) and
+  lines may not have trailing whitespace (`@stylistic/no-trailing-spaces`). Make sure the last line of every
+  file you create or rewrite is terminated by a newline.
+- Run `wh validate <filename>` on touched files to lint them. It doesn't report type errors; use
+  `wh checkmodule <modulename>` for the TypeScript type check.
+
 For specific tasks see:
 - [Command line tools](../webhare-cli/SKILL.md) using `@webhare/cli`.
 - [Managed and timed tasks](../tasks/SKILL.md).
