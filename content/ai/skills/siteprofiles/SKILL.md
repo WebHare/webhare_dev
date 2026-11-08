@@ -83,6 +83,30 @@ RTD definitions belong under `rtdTypes`; consuming rules select them using
 `rtdDoc.rtdType`. Check existing block styles, inline styles, tables, and widget
 policies before reusing or defining an RTD type.
 
+### baseProps
+
+Use the object form of `baseProps`, one property per line:
+
+```yaml
+    baseProps:
+      description: true
+      seoTitle: true
+```
+
+The array form (`baseProps: [description, seotitle]`) is deprecated and
+reported by `wh checkmodule`. The two forms behave differently: the array form
+resets every base property (listed ones on, all others off), while the object
+form only changes the properties it names and leaves the rest to defaults and
+earlier apply rules.
+
+When converting the array form, list only what the rule actually needs to
+change; do not spell out `false` for properties that are already off. Without
+any rule, `description` is enabled, `keywords` is enabled for files only, and
+everything else (`seoTitle`, `seoTab`, `isUnlisted`, `requireTitle`,
+`pageHeading`, `noIndex`, `noFollow`, `noArchive`) is disabled. Add an explicit
+`false` only when a default or earlier rule enables something this rule must
+turn off.
+
 ## Include the profile in the intended scope
 
 A webdesign's YAML siteprofile includes other profiles with **`applySiteProfiles`**:
