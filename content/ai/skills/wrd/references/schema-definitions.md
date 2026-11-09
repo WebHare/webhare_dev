@@ -99,7 +99,30 @@ Don't use `wrd_relation` as `parent`, `linkfrom` or `linkto` in new definitions;
 ## Attributes
 
 Common attribute options: `tag` (required), `title`, `description`, `comment`, `required`, `unique`,
-`unsafetocopy` (don't copy the value when cloning/syncing schemas - use for secrets and installation-specific data).
+`unsafetocopy` (see below).
+
+### unsafetocopy
+
+Set `unsafetocopy="true"` on secrets and on values that only make sense on this installation or for this one
+entity: API tokens and credentials, and IDs of the entity's counterpart in an external system (eg. a product ID
+returned by a remote API). WRD then skips the attribute in:
+
+- **WRD sync** (`wh wrd:syncschema`, which overwrites a local schema with data from a peer server): the source
+  doesn't send the attribute and the target doesn't write it. Entities updated by the sync keep their local
+  value; entities created by the sync start without one. This keeps eg. a test server synced from production
+  from using production credentials and talking to the production instance of an external service.
+- **`DuplicateEntity`**, including entities copied through `recursetypes`: the copy is created without the
+  value. For an external ID combined with `unique="true"`, this lets the copy get its own counterpart instead of
+  sharing (or conflicting on) the original's.
+
+It is *not* honored by:
+
+- Code that copies values itself, eg. `GetEntityFields` (or `GetCloneableEntityFields`) followed by
+  `CreateEntity`, or loading an existing entity into a Tollium edit screen to save it as a new one. Such code
+  must leave out or clear the attribute explicitly.
+- `wh wrd:clone`, `wh wrd:export`/`wrd:import` and copies of the whole database: these copy the value. When
+  recloning a server from another one, `wh run mod::system/scripts/tools/export-settings.whscr` exports the
+  `unsafetocopy` values (top-level attributes only) so they can be restored afterwards.
 
 | XML element | TypeScript value | Filterable | Notes |
 | --- | --- | --- | --- |
