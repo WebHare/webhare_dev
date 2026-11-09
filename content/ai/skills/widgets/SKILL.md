@@ -12,6 +12,9 @@ prefer a `.siteprl.yml` definition and a TypeScript renderer returning Litty.
 Keep Tollium editor markup in a separate `.screens.xml` file.
 See the [siteprofiles skill](../siteprofiles/SKILL.md) for general YAML definitions,
 apply rules, include scope, and XML-to-YAML conversion.
+To see which widgets are installed, where they're defined and what members they
+have, run `wh whfs list-types --kind widget` (add `--members` for full details)
+or `wh whfs describe-type <type>`, as described in that skill.
 
 ```yaml
 types:

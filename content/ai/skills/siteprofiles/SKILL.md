@@ -1,6 +1,6 @@
 ---
 name: siteprofiles
-description: "Create, update, or convert WebHare YAML siteprofiles (.siteprl.yml). Use for types, members, apply rules, applySiteProfiles, webdesign registration, RTD types, XML-to-YAML migrations, and siteprofile validation."
+description: "Create, update, or convert WebHare YAML siteprofiles (.siteprl.yml). Use for WHFS types (file, folder, widget and instance types), members, finding and inspecting installed types (wh whfs list-types, describe-type), apply rules, applySiteProfiles, webdesign registration, RTD types, XML-to-YAML migrations, and siteprofile validation."
 ---
 
 # YAML siteprofiles
@@ -15,6 +15,31 @@ XML element names or assume a legacy alias is the preferred YAML spelling.
 Prefer `.siteprl.yml` for new siteprofiles. Keep Tollium screens and
 tabsextensions in separate `.screens.xml` files; a YAML siteprofile references
 those editors rather than embedding XML.
+
+## Find and inspect installed WHFS types
+
+Use the `wh whfs` commands to see which WHFS types an installation actually
+has, instead of searching every module's siteprofiles. They read the parsed
+siteprofile configuration, so they also cover types defined in XML siteprofiles
+and in other modules. Older WebHare versions may lack these subcommands; check
+`wh whfs --help`.
+
+- `wh whfs list-types [masks...]` lists types with their `metaType`, resolved
+  title and `definedIn` (siteprofile and line). Masks such as `'mymodule:*'`
+  match the scoped type or namespace. Filter with the repeatable
+  `--kind file|folder|widget|instance`.
+- `wh whfs describe-type <type>` shows one type (by scoped type, namespace or
+  id) in a form close to its YAML definition: `metaType`, `title`/`tid`,
+  `comment`, `clone`, non-default file/widget settings and its members, with
+  YAML member type names and nested array members.
+- `wh whfs list-types --members` includes that full description for every
+  listed type. Use it with a mask or `--kind` instead of calling
+  `describe-type` for each type.
+
+Output is YAML by default; add `--json` for machine-readable output. RTD types
+aren't WHFS types and aren't listed. Use `definedIn` to open the defining
+siteprofile before changing a type, and rerun `wh apply config` (see below)
+before expecting changed definitions to show up.
 
 ## Definitions and naming
 
