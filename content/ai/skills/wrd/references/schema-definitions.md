@@ -117,9 +117,9 @@ returned by a remote API). WRD then skips the attribute in:
 
 It is *not* honored by:
 
-- Code that copies values itself, eg. `GetEntityFields` (or `GetCloneableEntityFields`) followed by
-  `CreateEntity`, or loading an existing entity into a Tollium edit screen to save it as a new one. Such code
-  must leave out or clear the attribute explicitly.
+- Code that copies values itself, eg. `GetEntityFields`/`GetCloneableEntityFields` followed by `CreateEntity`,
+  or loading an existing entity into a Tollium edit screen to save it as a new one. Don't copy entities this
+  way; use `DuplicateEntity` (with `updates` for the fields that should differ) so `unsafetocopy` is respected.
 - `wh wrd:clone`, `wh wrd:export`/`wrd:import` and copies of the whole database: these copy the value. When
   recloning a server from another one, `wh run mod::system/scripts/tools/export-settings.whscr` exports the
   `unsafetocopy` values (top-level attributes only) so they can be restored afterwards.

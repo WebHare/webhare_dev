@@ -89,6 +89,22 @@ RECORD res := wrdschema->^country->ImportEntities("ISO_CODE", rows, [ deletemode
 `->GetFields`, `->UpdateEntity`, `->CloseEntity`, `->DeleteEntity`, `->IsLive()`, `->UpdatePassword`, ...
 `GetEntity(id)` returns `DEFAULT OBJECT` if the entity doesn't exist (in any history state).
 
+### Copying entities
+
+Copy an entity with `DuplicateEntity`, never with `GetEntityFields`/`GetCloneableEntityFields` followed by
+`CreateEntity`. Only `DuplicateEntity` skips `unsafetocopy` attributes (secrets, external IDs), so a hand-made copy
+can end up sharing credentials or an external system's ID with the original.
+
+```harescript
+// Copy a round to another event, including its round types and their options
+OBJECT copy := wrdschema->^event_round->GetEntity(roundid)->DuplicateEntity(
+    [ updates :=      [ wrd_leftentity := neweventid ]                 // applied to the top-level copy only
+    , recursetypes := [ "event_round_type", "event_round_type_option" ] // also copy these attachments/links
+    ]);
+```
+
+There is no TypeScript equivalent; see [unsafetocopy](../wrd/references/schema-definitions.md#unsafetocopy).
+
 ## Defaults that differ from TypeScript
 
 These are the usual source of bugs when converting. Check every call:
