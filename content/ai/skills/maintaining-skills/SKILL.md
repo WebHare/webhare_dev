@@ -81,9 +81,16 @@ Create each skill in its own kebab-case directory:
 content/ai/skills/<skill-name>/
 ├── SKILL.md
 ├── references/   # Optional: detailed material loaded only when needed
-├── scripts/      # Optional: executable helpers required by the workflow
 └── assets/       # Optional: templates or other reusable assets
 ```
+
+Don't put executable scripts in a webhare_dev skill. Skills are served by
+the WebHare MCP skill server, which can't run scripts on the developer's
+machine, and webhare_dev may not be installed where the skill is used. Put a
+script a skill needs in the WebHare platform instead, preferably as a `wh`
+command in the devkit module (`modules/devkit/scripts/whcommands/`, invoked
+as `wh devkit:<command>`), and have the skill tell the reader to run that
+command.
 
 - The required YAML frontmatter `name` must match the directory name. Use
   lowercase letters, numbers, and hyphens.

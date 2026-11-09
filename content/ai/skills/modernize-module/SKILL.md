@@ -12,11 +12,10 @@ convert. **Never start converting before the user has chosen.** The scan is read
 
 1. Determine the module. Use the one the user names, otherwise the module containing the current working
    directory. Ask if that is ambiguous.
-1. Run the scan script from this skill (the deprecated API check lints every TypeScript file and can take a minute
-   on large modules):
+1. Run the scan (the deprecated API check lints every TypeScript file and can take a minute on large modules):
 
    ```bash
-   wh run mod::webhare_dev/content/ai/skills/modernize-module/scripts/scan-module.ts <module>
+   wh devkit:show-techinal-debt <module>
    ```
 
    Add `--json` for machine-readable output, or `--no-lint` to skip the slow deprecated API check.
