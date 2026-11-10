@@ -72,6 +72,23 @@ The current collection already separates broad tasks such as
   them. Do not present an obsolete API as a recommended approach. If a legacy
   form must be documented for maintenance or migration, label it clearly and
   state the current replacement when verified.
+- When documenting a new WebHare feature, say in which WebHare version it was
+  added. Take the version from `version` in the platform repository's
+  `whtree/etc/platform.conf` on the branch where the feature lands: that's the
+  release it will ship in.
+- Also tell the reader how to check that the feature is actually available
+  before using it. A WebHare reporting that version isn't proof: it may be a
+  build of the main branch from before the feature was merged, or the feature
+  may still be on a feature branch. Name a concrete check of the feature
+  itself, eg. a section in a schema such as
+  `mod::platform/data/schemas/moduledefinition.schema.yml`, an export of an
+  `@webhare/*` package, or a `wh` command or option (`wh <command> --help`).
+  The running version is in `backendConfig.whVersion` from
+  `@webhare/services`, and the devkit MCP server reports it in its
+  instructions.
+- Remove a feature's version note and availability check once the feature has
+  been in three or more releases (eg. a feature added in 6.2 once 6.4 has been
+  released).
 - When both alternatives support the needed behavior, prefer YAML and
   TypeScript over XML and HareScript. Verify that the newer alternative
   actually covers the use case; otherwise document the older form as required
