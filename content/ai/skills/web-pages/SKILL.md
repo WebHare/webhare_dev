@@ -133,12 +133,30 @@ export async function renderSearchPage(req: ContentPageRequest) {
 
 - `WebRequest` offers `url`, `method`, `headers`, `clientIp`, `getCookie()`/`getAllCookies()` and
   `text()`/`json()` for the body.
-- A dynamic renderer can return any `WebResponse`: `createRedirectResponse`, `createJSONResponse` or
-  `createWebResponse` from `@webhare/router`, with any status code.
+- A dynamic renderer can return any `WebResponse` with any status code. See [Creating responses](#creating-responses).
 - Dynamic pages cost a render per request. Don't make a page dynamic just for one personalized element; use
   a static page with frontend code or an API (eg. an OpenAPI service) for that part.
 - For APIs (JSON for frontend code), prefer an OpenAPI service ([openapi skill](../openapi/SKILL.md)) over
   a dynamic page.
+
+### Creating responses
+
+`@webhare/router` has a helper for each kind of response. They also apply to any other code returning a
+`WebResponse`, such as a router handling a webhook. Use them instead of writing your own wrapper around
+`JSON.stringify` or `new Response`:
+
+- `req.buildWebPage(litty)`: an HTML page in the site's design.
+- `createJSONResponse(status, body, { headers?, indent? })`: serializes `body` and sets
+  `Content-Type: application/json`. A `204` must have no body.
+- `createRedirectResponse(location, status?, { body?, headers? })`: sets `Location` and a small HTML body.
+  The status defaults to `303 See Other`. `location` can also be a `NavigateInstruction` (eg. a form post).
+- `createWebResponse(body, { status?, headers? })`: anything else. `body` can be a string, litty,
+  `ArrayBuffer`, `Blob` or `ReadableStream`. Without a `Content-Type` header, it uses
+  `text/html;charset=utf-8` (`application/octet-stream` for an `ArrayBuffer`), so set the header for
+  other content.
+
+Use the `HTTPErrorCode` and `HTTPSuccessCode` constants for status codes, eg.
+`createJSONResponse(HTTPErrorCode.BadRequest, { error: "Missing parameter" })`.
 
 ### Subpaths
 
