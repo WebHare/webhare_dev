@@ -47,7 +47,8 @@ types:
 - Include the profile from the intended webdesign's `applySiteProfiles` list (or its
   existing XML equivalent), not an unrelated legacy design.
 - Import the widget CSS from that design's existing frontend asset entrypoint.
-  Registering a siteprofile does not load CSS.
+  Registering a siteprofile does not load CSS. See the
+  [webdesign-frontend skill](../webdesign-frontend/SKILL.md).
 - `onRenderWidget` replaces legacy `renderer` and `wittyComponent` declarations
   when the entire widget is migrated. Remove obsolete renderer/template files
   only after checking their references.

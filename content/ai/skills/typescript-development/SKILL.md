@@ -23,5 +23,7 @@ Linting:
 For specific tasks see:
 - [Command line tools](../webhare-cli/SKILL.md) using `@webhare/cli`.
 - [Managed and timed tasks](../tasks/SKILL.md).
+- [Webdesigns](../webdesigns/SKILL.md), [page types and dynamic pages](../web-pages/SKILL.md) and
+  [their frontend code](../webdesign-frontend/SKILL.md).
 - [Registry keys](../webhare-registry/SKILL.md) using `readRegistryKey` from `@webhare/services`.
 - [Building or modernizing tests](../build-modernize-tests/SKILL.md) and [running them](../running-tests/SKILL.md).

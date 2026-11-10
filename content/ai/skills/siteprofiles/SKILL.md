@@ -160,6 +160,10 @@ Only register a profile globally when its definitions/rules genuinely need that
 scope. Registering a profile does not include CSS or JavaScript: connect frontend
 assets through the appropriate asset-pack entrypoint.
 
+For the design itself (`webDesign` apply rules, `onRenderPage`, page types with
+`onRenderContent`, asset packs) see the [webdesigns](../webdesigns/SKILL.md),
+[web-pages](../web-pages/SKILL.md) and [webdesign-frontend](../webdesign-frontend/SKILL.md) skills.
+
 ## XML-to-YAML conversion checklist
 
 1. Read the original definitions, apply rules, editors, and all incoming references.
