@@ -47,6 +47,10 @@ implementation happens to live:
 1. Keep module-facing instructions portable. Do not rely on an individual
    developer's installation, local hostname, checkout path, or unverified
    environment state.
+1. Do not point module-facing skills at the platform's own test code, such as
+   the `webhare_testsuite` module, as examples. It's the platform's internal
+   test module, not a reference for module developers. Put a self-contained
+   example in the skill instead.
 
 The current collection already separates broad tasks such as
 [directory structure](../directory-structure/SKILL.md),
