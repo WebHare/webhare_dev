@@ -1,6 +1,6 @@
 ---
 name: wrd
-description: "Model and use WRD (WebHare's entity/relation data store) from TypeScript with the modern wrd() API from @webhare/wrd: designing types (object, attachment, link, domain), attributes, arrays and domains in *.wrdschema.xml, registering schemas in moduledefinition.yml/xml, querying with query().select().where(), joining via links with enrich(), history modes (now/all/active), insert/update/upsert/sync, close vs delete, transactions (runInWork), choosing WRD vs an own <databaseschema> table with Kysely db(), and migrating legacy wh:wrd/... imports. Use for any WRD schema or WRD data work in TypeScript."
+description: "Model and use WRD (WebHare's entity/relation data store) from TypeScript with the modern wrd() API from @webhare/wrd: designing types (object, attachment, link, domain), attributes, arrays and domains in *.wrdschema.xml, registering schemas in moduledefinition.yml/xml, querying with query().select().where(), joining via links with enrich(), history modes (now/all/active), insert/update/upsert/sync, close vs delete, transactions (runInWork), choosing WRD vs an own <databaseschema> table, and migrating legacy wh:wrd/... imports. Use for any WRD schema or WRD data work in TypeScript."
 ---
 
 # WRD
@@ -234,8 +234,10 @@ await runInWork(async () => {
 
 - Use `modify(type).sync(keyField, rows, { unmatched: "close" })` to make a set of entities match an imported
   list (insert new, update changed, close/delete the rest). See [references/querying.md](references/querying.md).
-- Use `runInWork(fn, { mutex: "mymodule:import" })` when concurrent processes may create the same entities, and
-  `{ autoRetry: true }` for short transactions that may hit serialization conflicts.
+- Use `runInWork(fn, { mutex: "mymodule:import" })` when concurrent processes may create the same entities or
+  allocate the same value; take `wrd:usermgmt` to serialize against the HareScript user API, which holds it when
+  creating units, users or roles. See the [whdb skill](../whdb/SKILL.md) for mutexes, `autoRetry` and other work
+  options.
 - Use `getEventMasks(types)` to invalidate caches when WRD data changes; see the
   [localcache skill](../localcache/SKILL.md).
 
@@ -259,9 +261,8 @@ await runInWork(async () => {
 
 ## WRD or an own table
 
-WRD is not the only storage. A module can declare its own PostgreSQL tables with `<databaseschema>` in
-`moduledefinition.xml` (there is no YAML equivalent) and access them with Kysely through `db()` from
-`@webhare/whdb`. The platform does this itself: audit events and changesets are own tables that refer to WRD
+WRD is not the only storage. A module can declare its own PostgreSQL tables and query them with Kysely; the
+[whdb skill](../whdb/SKILL.md) explains how. The platform does this itself: audit events and changesets are own tables that refer to WRD
 entities.
 
 Use **WRD** for:
@@ -307,8 +308,6 @@ const report = await crmSchema.enrich("wrdPerson", rows, "person", { name: "wrdF
 
 - `ondelete="cascade"` removes your rows when the entity is *deleted*; closing doesn't touch them. Use
   `ondelete="set default"` to keep the rows but clear the reference.
-- Run `wh apply config` after changing `<databaseschema>` to regenerate `wh:db/<module>`; the interface is named
-  after the module (`my_module` becomes `MyModuleDB`).
 - Don't store WRD data in your own table "for speed" when it is really entity data; you lose history, Tollium
   editing and WRD's validation.
 

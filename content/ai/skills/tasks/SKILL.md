@@ -46,7 +46,7 @@ tasks:
 ```
 
 The runner is a TypeScript function receiving a `TaskRequest` and returning a
-`TaskResponse`. Open work before database operations. Return a resolution from
+`TaskResponse`. Open work (see the [whdb skill](../whdb/SKILL.md)) before database operations. Return a resolution from
 the request; the task runner finalizes the result and commits the work.
 
 ```ts

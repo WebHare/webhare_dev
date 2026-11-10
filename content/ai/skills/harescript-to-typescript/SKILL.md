@@ -43,8 +43,7 @@ Migrate HareScript (.whscr or .whlib) logic to TypeScript with behavior parity a
 - when HS function names use InitialCaps, convert exported TS functions/classes to normal TypeScript naming conventions (lower camelCase for functions, UpperCamelCase for classes)
 - for CLI/task scripts that use @webhare/cli, prefer runCli over run
 - for JSON equality checks, prefer stringify(value, { stable: true }) from @webhare/std over custom canonicalization helpers
-- prefer `await using work = await beginWork()` and `await work.commit()` from `@webhare/whdb`. Uncommitted work rolls back on disposal, including on exceptions. For dry runs, perform the writes but skip `work.commit()`. The method is `commit()`, not `finish()`.
-- avoid redundant try/catch blocks that only rethrow around transactions
+- convert transactions (`GetPrimary()->BeginWork()`/`CommitWork()`) as described in the [whdb skill](../whdb/SKILL.md): prefer `await using work = await beginWork()` and `await work.commit()`, which also covers dry runs and rollback on exceptions
 - when existing HareScript helpers encode business behavior (for example HTML cleanup/transforms), keep parity via loadlib instead of reimplementing immediately
 - for WRD `query().execute()` results, prefer schema-inferred types; avoid custom row types and avoid `as` casts unless there is a proven typing gap
 - preserve explicit HS output column aliases (example: `id := "WRD_ID"`) by adding a TS mapping step (for example map `wrdId` to `id`) before downstream logic uses that alias
