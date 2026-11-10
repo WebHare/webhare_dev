@@ -1,6 +1,6 @@
 ---
 name: modernize-module
-description: "Scan a WebHare module for deprecated and legacy constructs and modernize the ones the user picks: deprecated APIs (run -> runCli, test.run -> runTests, any @deprecated platform API), legacy wh:wrd/... WRD imports, rpc.json imports, .es files, XML siteprofiles, Witty templates, HareScript wh commands and shell scripts. Use when asked to modernize, upgrade, clean up or find deprecated code in a module."
+description: "Scan a WebHare module for deprecated and legacy constructs and modernize the ones the user picks: deprecated APIs (run -> runCli, test.run -> runTests, any @deprecated platform API), deprecated YAML properties in moduledefinition.yml and siteprofiles (pageBuilder -> onRenderPage, workflow -> clone: onDraft, clientFactory -> onCreateClient, OpenAPI initHook -> onInitService), legacy wh:wrd/... WRD imports, rpc.json imports, .es files, XML siteprofiles, Witty templates, HareScript wh commands and shell scripts. Use when asked to modernize, upgrade, clean up or find deprecated code in a module."
 ---
 
 # Modernize a module
@@ -15,7 +15,7 @@ convert. **Never start converting before the user has chosen.** The scan is read
 1. Run the scan (the deprecated API check lints every TypeScript file and can take a minute on large modules):
 
    ```bash
-   wh devkit:show-techinal-debt <module>
+   wh devkit:show-technical-debt <module>
    ```
 
    Add `--json` for machine-readable output, or `--no-lint` to skip the slow deprecated API check.
@@ -26,10 +26,11 @@ What the scan detects:
 | Category | Detection | How to convert |
 | --- | --- | --- |
 | `deprecated-api` | `@typescript-eslint/no-deprecated` with the module's own typed ESLint config | The replacement named in the deprecation message |
+| `deprecated-yaml` | Properties marked `deprecated: true` in the platform's YAML schemas (`moduledefinition.yml`, `*.siteprl.yml`) | The replacement named in the schema description, see below |
 | `legacy-wrd` | `from "wh:wrd/..."`, `new WRDSchema(` | [wrd skill](../wrd/SKILL.md), [migrating-legacy](../wrd/references/migrating-legacy.md) |
 | `rpc-json` | Imports of `*.rpc.json` | [rpc-json-to-service](../rpc-json-to-service/SKILL.md) |
 | `es-files` | `*.es` files | `wh devkit:es2ts <module>`, then fix the reported lint/type errors |
-| `siteprofile-xml` | `*.siteprl.xml` files | [siteprofiles](../siteprofiles/SKILL.md) |
+| `siteprofile-xml` | `*.siteprl.xml` files | `wh devkit:siteprl2yml <module>` (`--dry-run` first, `--mask` to limit), then [siteprofiles](../siteprofiles/SKILL.md) |
 | `witty` | `*.witty` files | [witty-to-litty](../witty-to-litty/SKILL.md) |
 | `harescript-cli` | `scripts/whcommands/*.whscr` | [harescript-cli-to-typescript](../harescript-cli-to-typescript/SKILL.md) |
 | `shell-scripts` | `*.sh` files | [convert-shell-to-typescript](../convert-shell-to-typescript/SKILL.md) |
@@ -37,6 +38,23 @@ What the scan detects:
 The deprecated API check relies on `@deprecated` JSDoc tags, so it covers every deprecated platform API (and
 deprecated JavaScript built-ins such as `substr`) without a list to maintain. It also covers `run` from
 `@webhare/cli` (now `runCli`) and `run` from `@webhare/test` (now `runTests`).
+
+The deprecated YAML check works the same way, using `deprecated: true` in the schemas of the platform's
+`moduleFileTypes` (eg. `mod::platform/data/schemas/siteprofile.schema.yml`). Renames it currently finds include:
+
+| Where | Deprecated | Replacement |
+| --- | --- | --- |
+| siteprofile `webDesign` | `pageBuilder` | `onRenderPage` |
+| siteprofile `webDesign` | `siteResponseFactory` | `onRenderPage` (rewrite: the page builder receives a `PageBuildRequest`) |
+| siteprofile types | `workflow: true` | `clone: onDraft` (drop `workflow: false`, `onCopy` is the default) |
+| siteprofile `apply` | array form of `baseProps` | object form, see the [siteprofiles skill](../siteprofiles/SKILL.md) |
+| moduledefinition `backendServices` | `clientFactory`, `controllerFactory` | `onCreateClient`, `onCreateController` |
+| moduledefinition `openApiServices` | `initHook`, `handlerInitHook` | `onInitService`, `onInitHandler` |
+| moduledefinition `acmeChallengeHandlers` | `handlerFactory` | `onCreateHandler` |
+
+The renames are WebHare 6.0 changes. `contentBuilder` and `widgetBuilder` (now `onRenderContent` and
+`onRenderWidget`) are no longer supported at all, not even as deprecated aliases, so the scan can't report them.
+Search for them (`grep -rnE 'contentBuilder|widgetBuilder' --include='*.yml'`) and rename them by hand.
 
 ## 2. Report and ask
 
