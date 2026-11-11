@@ -111,8 +111,10 @@ after the module, and the definition is validated against `mod::system/data/vali
 - `<d:index name="..." columns="col1 col2" unique="1" />` adds an index.
 - To remove a table, column or index, replace it with `<d:obsoletetable>`, `<d:obsoletecolumn>` or
   `<d:obsoleteindex>` with the same `name`, so existing installations drop it.
-- Run `wh apply config` after changing `<databaseschema>`. That updates the database and regenerates the Kysely
-  types in `wh:db/<module>`. Don't edit the generated file.
+- After changing `<databaseschema>`, run `wh softreset` to apply the changes to the database (new tables, columns and
+  indices, and dropping obsolete ones). `wh apply config` only regenerates the Kysely types in `wh:db/<module>`; it
+  doesn't touch the database, so code using a new column type-checks but fails at runtime until the softreset. Don't
+  edit the generated file.
 
 ### Query with Kysely
 
@@ -160,8 +162,8 @@ Tollium screens use `this->BeginWork()` ... `work->Finish()`; that's HareScript-
 ## Verify
 
 - Run `wh checkmodule <module>` to type-check queries against the generated `wh:db/<module>` types.
-- After `wh apply config`, check that `wh:db/<module>` contains your tables; `wh db showusage` lists the tables in
-  the database.
+- After `wh apply config`, check that `wh:db/<module>` contains your tables. After `wh softreset`, check that the
+  database has them too: `wh db showusage` lists the tables in the database.
 
 ## Related skills
 
