@@ -150,8 +150,10 @@ command.
 
 ## Commit each skill change
 
-Commit a skill change right after you make it, in whichever repository holds
-the skill, and include only the skill files you changed. If you can't commit
+Commit a change to a skill in `webhare_dev` right after you make it, and
+include only the skill files you changed. This doesn't apply to skills in
+other repositories, such as the platform's `.agents/skills/`: commit those
+as part of the regular work in that repository. If you can't commit
 (eg. the repository is in the middle of a merge or rebase, or the files also
 contain someone else's uncommitted changes), tell the user that the change is
 still uncommitted.
@@ -173,5 +175,5 @@ Before finishing a skill change, check that:
   workflow.
 - The main file remains concise, with optional references used only when they
   improve progressive loading.
-- The change is committed on its own with a message explaining why, or the
-  user has been told it isn't.
+- A change in `webhare_dev` is committed on its own with a message explaining
+  why, or the user has been told it isn't.
