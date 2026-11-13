@@ -1,6 +1,6 @@
 ---
 name: running-tests
-description: Run and debug WebHare TypeScript or HareScript tests with wh runtest, resolve test-result URLs to the local installation, open the /.system/jstests/ runner without logging in (testpagetoken from wh test generate-token), and verify frontend behavior in a browser.
+description: Run and debug WebHare TypeScript or HareScript tests with wh runtest, resolve test-result URLs to the local installation, open the /.system/jstests/ runner without logging in (testpagetoken from wh test generate-token), and verify frontend or backend behavior in a browser, logged in as a temporary test user.
 ---
 
 # Running WebHare tests
@@ -110,6 +110,8 @@ https://<installation-hostname>/testoutput/webhare_testsuite.testsite/testsuitep
 ```
 
 This opens an interactive screen; it does not execute the automated test suite. Run the automated test separately.
+
+If the page needs a login, such as a backend application or a site protected by wrdauth, don't ask the user to log in or for credentials. Create a temporary test user with the rights you need and open its login link: `wh test create-user --right <right> --link <url>`. See the [test users skill](../test-users/SKILL.md).
 
 Use real browser interactions to verify browser-native behavior. Synthetic events dispatched by test helpers do not necessarily trigger native default actions. In particular, synthetic mouse gestures are not proof that native popover light-dismiss works. Prefer the browser automation tools' click, hover, and key actions for such checks. Read DOM state and geometry to confirm the outcome rather than relying only on screenshots.
 
