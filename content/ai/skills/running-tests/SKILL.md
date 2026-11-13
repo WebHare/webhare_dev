@@ -1,6 +1,6 @@
 ---
 name: running-tests
-description: Run and debug WebHare TypeScript or HareScript tests with wh runtest, resolve test-result URLs to the local installation, and verify frontend behavior in a browser.
+description: Run and debug WebHare TypeScript or HareScript tests with wh runtest, resolve test-result URLs to the local installation, open the /.system/jstests/ runner without logging in (testpagetoken from wh test generate-token), and verify frontend behavior in a browser.
 ---
 
 # Running WebHare tests
@@ -81,6 +81,25 @@ https://my.webhare.dev/.system/jstests/?site=webhare_testsuite.testsite&mask=tol
 ```
 
 should be opened with the same path and query on the current installation's hostname.
+
+### Access the test runner without logging in
+
+The `/.system/jstests/` runner requires a backend login with the `system:sysop`
+right. Without one it redirects to the login page. To open it in a browser
+that isn't logged in, eg. your browser automation tools:
+
+1. Run `wh test generate-token`. It prints a test page token that's valid for
+   one hour.
+1. Add it to the runner URL as the `testpagetoken` parameter, URL-encoded:
+   `https://<installation-hostname>/.system/jstests/?site=<site>&mask=<testname>&testpagetoken=<token>`
+
+`wh runtest` does the same thing itself, so you only need this for opening
+the runner manually. Don't use a backend override token (`wh cli
+getoverride`) for this: it doesn't log you in to the runner.
+
+The token requirement and `wh test generate-token` were added in WebHare
+6.2.0. If `wh test --help` doesn't list `generate-token`, the runner doesn't
+require a login and you can open it without a token.
 
 ## Verify frontend behavior in a browser
 
