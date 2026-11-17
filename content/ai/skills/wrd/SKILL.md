@@ -322,6 +322,10 @@ const report = await crmSchema.enrich("wrdPerson", rows, "person", { name: "wrdF
 - Writing outside `runInWork()`/`beginWork()`.
 - Reading or writing entities one by one in a loop.
 - Re-implementing a join by hand instead of `.where("wrdId", "in", ids)` or `enrich()`.
+- Deleting an attribute from a `*.wrdschema.xml` file to get rid of it. That leaves the attribute and its data on
+  every server that already has it. Replace it with `<obsolete tag="..."/>` to delete it, or comment it out with an
+  explanation to keep it (see
+  [removing attributes](references/schema-definitions.md#removing-attributes)).
 
 ## Schema naming, moving and settings
 

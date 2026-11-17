@@ -156,9 +156,23 @@ It is *not* honored by:
 Legacy elements not to use in new definitions: `record` (HSON - use `json`), `domainsingle`/`domainmultiple`
 (use `domain`/`domainarray`), `statusrecord`.
 
-Removing an attribute from the definition leaves it (and its data) in the database. Replace it with
-`<obsolete tag="..."/>` to delete it. To move data from an old attribute to a new one first, see the
-[wrd-migrations skill](../../wrd-migrations/SKILL.md).
+### Removing attributes
+
+Applying a definition never deletes an attribute just because it's no longer listed: servers that already have it keep
+the attribute and its data. Decide which of the two you want:
+
+- **Delete it, including its data:** replace it with `<obsolete tag="..."/>`. The attribute is deleted from every
+  server when the definition is applied. Keep a short explanation in `comment` or an XML comment:
+
+  ```xml
+  <obsolete tag="legacy_status" comment="Unused since 2026-11, replaced by the status attribute" />
+  ```
+
+- **Stop using it, but keep the data on existing servers** (eg. to look at it later or to delete it in a later
+  release): comment out the attribute and explain in the comment when and why it was commented out. New servers won't
+  get it, existing ones keep it.
+
+To move data from an old attribute to a new one first, see the [wrd-migrations skill](../../wrd-migrations/SKILL.md).
 
 ## Seeding entities with values
 
