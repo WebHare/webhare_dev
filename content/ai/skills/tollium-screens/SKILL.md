@@ -116,7 +116,8 @@ In code, use `this->GetTid(".status-" || status)` for texts relative to the scre
 
 ## Validation
 
-1. Run `wh validate` on the changed screen XML, the library and the language files.
+1. Run `wh devkit:lintchanged` to check all changed files at once (the screen XML, the library and the language
+   files), or `wh validate` on a single file. See the [running-tests skill](../running-tests/SKILL.md#validate-and-run).
 1. Open the screen in the browser. Some errors, such as a missing `rowkeytype` on a pulldown with options set from
    code, only show up at runtime.
 

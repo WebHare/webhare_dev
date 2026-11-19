@@ -11,7 +11,7 @@ When adding or modifying HareScript tests, follow the [HareScript development sk
 
 ## Validate and run
 
-1. Validate touched files with `wh validate <filename>`. This covers HareScript (`.whscr`/`.whlib`) and XML resources, but for TypeScript it only runs the linter: type errors are reported by `wh checkmodule` (see below).
+1. Validate touched files. `wh devkit:lintchanged` checks every file with staged or unstaged git changes in one go: it runs `wh checkmodule` limited to those paths, with warnings and hints hidden. It finds the module from the current directory (or pass a path inside the module), prints nothing and exits 0 when the files are clean, and takes seconds where a full `wh checkmodule` takes much longer. To check a single file including its warnings, use `wh validate <filename>`. This covers HareScript (`.whscr`/`.whlib`) and XML resources, but for TypeScript it only runs the linter: type errors are reported by `wh checkmodule` (see below).
 1. Run the narrow affected test with `wh runtest <testname>` or `wh runtest -- /absolute/path/to/test.ts`. For example, `wh runtest tollium.richdoc.teststructured-tables`.
 1. Run tests serially: they share a global testframework lock. Do not kill another developer's test to acquire the lock; report blocked verification.
 1. On failure, inspect the reported log and screenshot. Read logs in bounded sections and use the failure location to narrow the investigation.
