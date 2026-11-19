@@ -271,12 +271,21 @@ Use **WRD** for:
 - data that needs history (closing, reopening, looking back with `at`/`all`);
 - people, organizations, accounts and anything used by authentication or user management;
 - personal data (types marked `haspersonaldata`), choice lists (domains), files, images and rich text that come
-  with WRD's handling.
+  with WRD's handling;
+- data that someone will want to look at or copy to another server (see below).
+
+WRD data comes with tooling that an own table doesn't have: every schema can be browsed in the WRD browser, and
+WRD schemas can be exported and synced between servers (eg. from production to a test or development server). An
+own table is invisible to both. Looking at its rows, or getting them onto another server, needs a bespoke solution
+for that table. Weigh this before choosing an own table, also for data that looks like a log: records that belong
+to an entity and are of modest volume (eg. the notifications collected for a person) are usually better off as an
+attachment type linked to that entity.
 
 Use an **own table** for:
 
-- append-only logs and events (clicks, deliveries, API calls, audit-like trails);
-- high-volume data written frequently, where per-entity overhead and history don't add value;
+- high-volume append-only logs and events (clicks, deliveries, API calls, audit-like trails) that nobody needs to
+  browse or sync;
+- data written so frequently that per-entity overhead and history cost more than they add;
 - data you need to aggregate, join or sort in SQL with real indexes;
 - queue- or state-tracking rows owned by code, not edited by users.
 
