@@ -17,8 +17,10 @@ Linting:
   `wh checkmodule` and CI. In particular, **every file must end with a newline** (`@stylistic/eol-last`) and
   lines may not have trailing whitespace (`@stylistic/no-trailing-spaces`). Make sure the last line of every
   file you create or rewrite is terminated by a newline.
-- Run `wh validate <filename>` on touched files to lint them. It doesn't report type errors; use
-  `wh checkmodule <modulename>` for the TypeScript type check.
+- After changing files, run `wh devkit:lintchanged` to check every file with staged or unstaged git changes in
+  one go. Use `wh validate <filename>` to lint a single file including its warnings. Neither is the place to
+  look for type errors; use `wh checkmodule <modulename>` for the TypeScript type check. See
+  [validate and run](../running-tests/SKILL.md) for the details and for running the affected tests.
 
 For specific tasks see:
 - [Command line tools](../webhare-cli/SKILL.md) using `@webhare/cli`.
