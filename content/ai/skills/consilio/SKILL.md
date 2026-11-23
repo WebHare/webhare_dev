@@ -1,6 +1,6 @@
 ---
 name: consilio
-description: Set up, reindex and troubleshoot Consilio search catalogs in WebHare modules. Covers catalogs and fieldgroups in moduledefinition.xml, adding sites with addToCatalogs, extra page fields with pageMetadata.consilioFields, reindexing from the command line with wh consilio:manualindex, applying field mapping changes with wh consilio:update, and finding indexing errors such as OpenSearch mapper_parsing_exception. Use for site search, frontend search, search indexes, "reindex the search", or why a page isn't (correctly) indexed.
+description: Set up, reindex and troubleshoot Consilio search catalogs in WebHare modules. Covers catalogs and fieldgroups in moduledefinition.xml, adding sites with addToCatalogs, extra page fields with pageMetadata.consilioFields, reindexing from the command line with wh consilio:manualindex, applying field mapping changes with wh consilio:update, and finding indexing errors such as OpenSearch mapper_parsing_exception. Also explains how site search catalogs differ from the WHFS index behind the Publisher's backend search. Use for site search, frontend search, Publisher search, search indexes, "reindex the search", or why a page isn't (correctly) indexed.
 ---
 
 # Consilio
@@ -12,6 +12,18 @@ holds one or more indexed **objects** (for a site: the pages of that file, keyed
 
 Indexing normally happens in the background: when a file is republished, the background indexer reindexes its
 group. You only need to act yourself when you change the catalog setup, or to reindex or debug content.
+
+## Site search versus the WHFS index
+
+WebHare indexes WHFS content in two separate ways. Know which one you're dealing with:
+
+- **Site content sources** feed your own catalogs for a search on the website (frontend). They index the
+  *published pages* of each file, as rendered by the webdesign, including any `pageMetadata.consilioFields`. Set
+  them up with `addToCatalogs` (see below).
+- **The WHFS index** (catalog `consilio:whfs`) is built into WebHare and powers the Publisher's search in the
+  backend. It doesn't use the published pages: it gets the content of a file from its type's search content
+  provider (`searchContentProvider` on the type in the siteprofile; rich documents render their RTD for this).
+  `consilioFields` play no part here, so you can't use them to add fields to the Publisher's search.
 
 ## Defining a catalog
 
@@ -51,8 +63,9 @@ siteSettings:
 See the [siteprofiles skill](../siteprofiles/SKILL.md) for siteprofile structure. Each site content source
 indexes the published pages of every file below its folder.
 
-To index extra fields with a page, fill `pageMetadata.consilioFields` in the page builder or a widget (see the
-[webdesigns skill](../webdesigns/SKILL.md)):
+To index extra fields with a page in your site search catalogs, fill `pageMetadata.consilioFields` in the page
+builder or a widget (see the [webdesigns skill](../webdesigns/SKILL.md)). These fields only end up in catalogs fed
+by site content sources, not in the WHFS index:
 
 ```typescript
 req.pageMetadata.consilioFields.category = "news";
@@ -125,8 +138,9 @@ OpenSearch can't change the type of an existing field (eg. from `keyword` to `re
 
 ## In the backend
 
-- **Publisher, Inspect dialog, Consilio tab** of a file: the pages Consilio extracts from it, the content sources
-  and catalogs it's part of, *Reindex* (queues the file for the background indexer), *Inspect in Consilio* (what's
+- **Publisher, Inspect dialog, Consilio tab** of a file: the pages Consilio extracts from it for site content
+  sources (*Pagelist*, including their `consilioFields`), the content it provides to the WHFS index (*Subfiles*),
+  the content sources and catalogs it's part of, *Reindex* (queues the file for the background indexer), *Inspect in Consilio* (what's
   stored in the index) and *Inspect source* (computes the documents without storing them). Newer WebHare versions
   also have *Index now*, which indexes the file in the selected content source right away and shows any error.
 - **Consilio catalog management** application: catalogs, their content sources, indexing status and the last
