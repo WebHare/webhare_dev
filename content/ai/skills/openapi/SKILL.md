@@ -23,9 +23,12 @@ Mount the service at a backend path in `moduledefinition.xml`:
 
 ```xml
 <backend>
-  <openapi path="allroots:/.example/api/" service="example" />
+  <openapi path="allroots:/.wh/mod/example/api/" service="example" />
 </backend>
 ```
+
+Mount module APIs under `/.wh/mod/<modulename>/`, not under a root namespace of their own such as `/.example/`.
+See [web rules](../web-rules/SKILL.md) for the URL namespaces.
 
 The YAML `openApiServices` entry registers the service; the XML `<openapi>`
 element mounts it. These are separate configuration steps.

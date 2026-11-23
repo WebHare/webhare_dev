@@ -57,7 +57,7 @@ Path matching:
 
 ```xml
 <backend>
-  <webrule path="allroots:/.mymodule/uploads/" match="initial" priority="after">
+  <webrule path="allroots:/.wh/mod/mymodule/uploads/" match="initial" priority="after">
     <addheader header="Content-Security-Policy" value="sandbox" />
     <addheader header="X-Content-Type-Options" value="nosniff" />
     <tryfolder path="storage::mymodule/uploads/" />
@@ -70,6 +70,19 @@ The `path` prefix sets which hosts the rule applies to:
 - `root:` - WebHare backend (interface) hosts only.
 - `allroots:` - every host, including published sites.
 - `outputroots:` - published sites only, not the backend.
+
+Don't give a module its own root namespace such as `/.mymodule/`. Modules mount their paths under `/.wh/`, so
+that one prefix covers everything WebHare serves that doesn't need a login (well-known URLs, content-addressed
+files, APIs that do their own authentication):
+
+- `/.wh/mod/<modulename>/` - a module's own paths: APIs, webhooks, uploads. Every add-on module also gets
+  `/.wh/mod/<modulename>/public/` automatically, serving its `public/` folder.
+- `/.wh/ea/mod/<modulename>/` - embeddable assets (images, files embedded in pages). Keeping these apart helps rate
+  limiting and error handling: many requests per second are normal for embedded assets but not for pages.
+- Other paths under `/.wh/` (such as `/.wh/common/`, `/.wh/ea/uc/`, `/.wh/devkit/`) belong to the platform.
+
+Existing modules may still use an older `/.<name>/` path. Keep it if clients depend on it, but don't copy it to new
+rules.
 
 `match` is `initial` (prefix), `exact`, `wildcards` or `cookie`. What serves the path is set by `router` (a
 TypeScript router function), `handlebydir`, `<tryfolder>`/`<tryfile>` or `handlebyscript`. Other attributes include
