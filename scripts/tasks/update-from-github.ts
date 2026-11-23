@@ -1,4 +1,4 @@
-import { runCli } from "@webhare/cli";
+import { CLIRuntimeError, runCli } from "@webhare/cli";
 import { lockMutex, scheduleTimedTask, toFSPath } from "@webhare/services";
 import { runInWork } from "@webhare/whdb";
 import { execFile } from "node:child_process";
@@ -11,15 +11,26 @@ const executeFile = promisify(execFile);
 const repository = "https://github.com/WebHare/webhare_dev.git";
 
 async function git(args: string[]) {
-  const { stdout, stderr } = await executeFile("git", ["-c", "credential.helper=", ...args], {
-    env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "" },
-    timeout: 120_000
-  });
+  let stdout: string, stderr: string;
+  try {
+    ({ stdout, stderr } = await executeFile("git", ["-c", "credential.helper=", ...args], {
+      env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "" },
+      timeout: 120_000
+    }));
+  } catch (e) {
+    //Report git's own error output on stderr, runCli then also sets a nonzero exit code
+    const details = (e as { stderr?: string }).stderr?.trim() || (e as Error).message;
+    throw new CLIRuntimeError(`git ${args.join(" ")} failed: ${details}`);
+  }
 
-  if (stdout)
-    console.log(stdout.trimEnd());
-  if (stderr)
-    console.error(stderr.trimEnd());
+  //Only echo git's output when run interactively. As a servicemanager task, any output without an error exit code is
+  //reported as a possible problem. Failures are reported above, with an exit code
+  if (process.stdout.isTTY) {
+    if (stdout)
+      console.log(stdout.trimEnd());
+    if (stderr)
+      console.error(stderr.trimEnd());
+  }
   return stdout.trim();
 }
 
@@ -28,7 +39,7 @@ runCli({
   async main() {
     using lock = await lockMutex("webhare_dev:update-from-github", { timeout: 0 });
     if (!lock)
-      throw new Error("Another update-from-github task is already running");
+      throw new CLIRuntimeError("Another update-from-github task is already running");
 
     const checkout = toFSPath("storage::webhare_dev/checkouts/webhare_dev");
     let previousCommit: string | undefined;
