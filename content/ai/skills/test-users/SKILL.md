@@ -36,6 +36,10 @@ Options:
 The user gets the login and email address `test<number>@beta.webhare.net` and a random first and last name. It's
 placed in the "Test Users" unit (wrdTag `WEBHARE_TEST_USERS`), which is created when needed. The user has no password.
 
+A schema without units (no `whuserUnit` type, eg. one only used for website logins) gets test users too, but they
+aren't placed in a unit and can't be granted rights or roles: `--right` and `--role` are refused for such a schema, and
+`platform:debug` isn't granted.
+
 Test users are closed at the time a login started now would expire, which by default is early next morning. There's
 no need to clean them up. Create a new user if you need one later.
 
@@ -48,7 +52,7 @@ wh test create-link test3 https://my.webhare.dev/
 ```
 
 The user can be given as its wrdId, its wrdGuid, its full login (`test3@beta.webhare.net`) or just `test3`. Only
-users in the test users unit are accepted. The output has the same fields as `create-user`.
+users in the test users unit are accepted (in a schema without units: users with a `test<number>@beta.webhare.net` login). The output has the same fields as `create-user`.
 
 Opening `loginLink` sets the login cookies and redirects to the URL you gave. A link:
 

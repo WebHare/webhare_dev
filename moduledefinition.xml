@@ -46,7 +46,8 @@
 
   <servicemanager>
     <task script="scripts/tasks/import-repo.ts" tag="import_repo" description="Import the webhare_dev repository checkout" runatstartup="true" />
-    <task runat="*/5 * * * *" script="scripts/tasks/update-from-github.ts" tag="update_from_github" description="Keep the webhare_dev main branch checkout up to date from GitHub" runatstartup="true" />
+    <task script="scripts/tasks/import-platform.ts" tag="import_platform" description="Import the platform repository checkout: sync its release notes to www.webhare.dev" runatstartup="true" />
+    <task runat="*/5 * * * *" script="scripts/tasks/update-from-github.ts" tag="update_from_github" description="Keep the webhare_dev and platform main branch checkouts up to date from GitHub" runatstartup="true" />
     <task script="mod::devkit/scripts/whcommands/generate-sdk-docs.ts" tag="regen_docs" runatstartup="true">
       <arg>--upload</arg>
     </task>

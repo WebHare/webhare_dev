@@ -8,14 +8,27 @@ import { dirname, join } from "node:path";
 import { promisify } from "node:util";
 
 const executeFile = promisify(execFile);
-const repository = "https://github.com/WebHare/webhare_dev.git";
 
-async function git(args: string[]) {
+interface Checkout {
+  /** Checkout name, the folder in storage::webhare_dev/checkouts/ */
+  name: string;
+  repository: string;
+  /** Task to schedule after the initial clone or when the checked-out commit changes */
+  onChange?: string;
+}
+
+const checkouts: Checkout[] = [
+  { name: "webhare_dev", repository: "https://github.com/WebHare/webhare_dev.git", onChange: "webhare_dev:import_repo" },
+  { name: "platform", repository: "https://github.com/WebHare/platform.git", onChange: "webhare_dev:import_platform" }
+];
+
+async function git(args: string[], { timeout = 120_000 } = {}) {
   let stdout: string, stderr: string;
   try {
     ({ stdout, stderr } = await executeFile("git", ["-c", "credential.helper=", ...args], {
       env: { ...process.env, GIT_TERMINAL_PROMPT: "0", GIT_ASKPASS: "" },
-      timeout: 120_000
+      timeout,
+      maxBuffer: 16 * 1024 * 1024
     }));
   } catch (e) {
     //Report git's own error output on stderr, runCli then also sets a nonzero exit code
@@ -28,34 +41,51 @@ async function git(args: string[]) {
   if (process.stdout.isTTY) {
     if (stdout)
       console.log(stdout.trimEnd());
+    //git reports progress and status (eg "Already on 'main'") on stderr. Real failures make execFile throw
     if (stderr)
-      console.error(stderr.trimEnd());
+      console.log(stderr.trimEnd());
   }
   return stdout.trim();
 }
 
+/** Clone or fast-forward the main branch of a checkout. Returns whether the checked-out commit changed */
+async function updateCheckout({ name, repository }: Checkout): Promise<boolean> {
+  const checkout = toFSPath(`storage::webhare_dev/checkouts/${name}`);
+  let previousCommit: string | undefined;
+  if (!existsSync(join(checkout, ".git"))) {
+    await mkdir(dirname(checkout), { recursive: true });
+    //Blobless clone: history is complete but old file versions are only fetched when needed. The platform repository is big
+    await git(["clone", "--quiet", "--filter=blob:none", "--branch", "main", "--single-branch", repository, checkout], { timeout: 30 * 60_000 });
+  } else {
+    previousCommit = await git(["-C", checkout, "rev-parse", "HEAD"]);
+    await git(["-C", checkout, "fetch", repository, "refs/heads/main:refs/remotes/origin/main"], { timeout: 10 * 60_000 });
+    await git(["-C", checkout, "checkout", "main"]);
+    await git(["-C", checkout, "merge", "--ff-only", "origin/main"], { timeout: 10 * 60_000 });
+  }
+  const currentCommit = await git(["-C", checkout, "rev-parse", "HEAD"]);
+  return currentCommit !== previousCommit;
+}
+
 runCli({
-  description: "Keep the webhare_dev main branch checkout up to date from GitHub",
+  description: "Keep the main branch checkouts of webhare_dev and platform up to date from GitHub",
   async main() {
     using lock = await lockMutex("webhare_dev:update-from-github", { timeout: 0 });
     if (!lock)
       throw new CLIRuntimeError("Another update-from-github task is already running");
 
-    const checkout = toFSPath("storage::webhare_dev/checkouts/webhare_dev");
-    let previousCommit: string | undefined;
-    if (!existsSync(join(checkout, ".git"))) {
-      await mkdir(dirname(checkout), { recursive: true });
-      await git(["clone", "--branch", "main", "--single-branch", repository, checkout]);
-    } else {
-      previousCommit = await git(["-C", checkout, "rev-parse", "HEAD"]);
-      await git(["-C", checkout, "fetch", repository, "refs/heads/main:refs/remotes/origin/main"]);
-      await git(["-C", checkout, "checkout", "main"]);
-      await git(["-C", checkout, "merge", "--ff-only", "origin/main"]);
+    //Update each checkout independently, so a failing one doesn't block the others
+    const failed: string[] = [];
+    for (const checkout of checkouts) {
+      try {
+        if (await updateCheckout(checkout) && checkout.onChange)
+          await runInWork(() => scheduleTimedTask(checkout.onChange!));
+      } catch (e) {
+        console.error(`Updating checkout '${checkout.name}' failed:`, (e as Error).message);
+        failed.push(checkout.name);
+      }
     }
-    const currentCommit = await git(["-C", checkout, "rev-parse", "HEAD"]);
-    //import-repo syncs the site folder (and generates ai/index.json) from the checkout. Also run it if that never happened
-    if (currentCommit !== previousCommit)
-      await runInWork(() => scheduleTimedTask("webhare_dev:import_repo"));
+    if (failed.length)
+      throw new CLIRuntimeError(`Failed to update checkout(s): ${failed.map(name => `'${name}'`).join(", ")}`);
     return 0;
   }
 });

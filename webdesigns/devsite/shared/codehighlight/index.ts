@@ -30,8 +30,9 @@ Prism.hooks.add('before-sanity-check', function (env) {
 
 //TODO remove manual mode above, and just render proper output from harescript ?
 dompack.register('code', node => {
-  if (node.closest("p,li"))
-    return; //this is not a block level <code>
+  //Markdown renders code blocks as <pre><code>. Any other <code> inside text (paragraphs, lists, headings, tables) is inline
+  if (!node.parentElement?.matches("pre") && node.closest("p,li,h1,h2,h3,h4,h5,h6,td,th,dt,dd"))
+    return;
 
   let wrapper = dompack.closest(node, 'pre');
   if (!wrapper) {
