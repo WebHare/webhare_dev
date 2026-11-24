@@ -71,9 +71,42 @@ html
 {
   font-weight: bold;
 }
-.wh-rtd__table * + *
+.wh-rtd__table :is(td, th) + :is(td, th)
 {
   padding-left: 15px;
+}
+
+/* Tables rendered from markdown (these have no class): a column header in <thead>, rows separated by lines */
+article > table:not([class])
+{
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+article > table:not([class]) > thead th
+{
+  font-weight: bold;
+  text-align: left;
+  border-bottom: 1px solid #2486DB;
+}
+  article > table:not([class]) > thead th
+, article > table:not([class]) > tbody td
+{
+  padding-top: 6px;
+  padding-bottom: 6px;
+  padding-right: 15px;
+}
+article > table:not([class]) > tbody tr + tr td
+{
+  border-top: 1px solid #e0e0e0;
+}
+
+/* Inline code in text, headings and tables */
+:not(pre) > code
+{
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  padding: 1px 4px;
+  font-size: 0.9em;
 }
 .wh-rtd--hasrowheader th
 {
