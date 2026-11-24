@@ -11,6 +11,10 @@ General guidelines:
   `moduledefinition.yml`; see the [modules skill](../modules/SKILL.md) and the
   [directory structure skill](../directory-structure/SKILL.md).
 - The TypeScript compiler used by WebHare is the one in the WebHare installation's `whtree/node_modules`.
+- Before adding an npm package with an `engines.node` requirement, check WebHare's Node.js version. Run
+  `wh node --version` for the version that actually runs your code. The major version a WebHare release is built
+  for is `node_major` in `etc/platform.conf` in the WebHare installation (`whtree/etc/platform.conf` in a source
+  checkout).
 
 Linting:
 - WebHare's ESLint configuration (`@webhare/eslint-config`) treats style issues as errors, which fail
