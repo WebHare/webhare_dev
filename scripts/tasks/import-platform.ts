@@ -50,22 +50,28 @@ async function importReleaseNotes(checkout: string) {
     for (const file of files) {
       const name = getTargetName(file);
       const text = await readFile(join(source, file), "utf8");
-      const target = await folder.ensureFile(name, { type: markdownType }, { ifNew: { title: name === "index" ? "Release notes" : `${name} release notes`, publish: true } });
+      //Don't use ensureFile: it updates (and thus touches the modification date of) existing files even if nothing changed
+      let target = await folder.openFile(name, { allowMissing: true });
+      if (target?.type === markdownType) {
+        const current = await markdown.get(target.id, { export: true });
+        if (current.data?.type === "platform:markdown" && "text" in current.data && current.data.text === text)
+          continue;
+      }
 
-      const current = await markdown.get(target.id, { export: true });
-      if (current.data?.type === "platform:markdown" && "text" in current.data && current.data.text === text)
-        continue;
+      if (!target)
+        target = await folder.createFile(name, { type: markdownType, title: name === "index" ? "Release notes" : `${name} release notes`, publish: true });
 
       await markdown.set(target.id, { data: { type: "platform:markdown", text } });
+      await target.update({ type: markdownType, publish: true }); //sets the modification date and republishes the file
       console.log(`Updated '${name}' from '${file}'`);
     }
 
     //Order the folder's files (including release notes that aren't in the repository) with the most recent version first
-    const entries = (await folder.list(["name", "ordering", "isFolder"])).filter(entry => !entry.isFolder);
+    const entries = (await folder.list(["name", "ordering", "isFolder", "modified"])).filter(entry => !entry.isFolder);
     entries.sort((lhs, rhs) => compareReleaseNotes(lhs.name, rhs.name));
     const reorder = entries.filter((entry, idx) => entry.ordering !== idx + 1);
     for (const entry of reorder)
-      await (await folder.openFile(entry.name)).update({ order: entries.indexOf(entry) + 1 });
+      await (await folder.openFile(entry.name)).update({ order: entries.indexOf(entry) + 1, modified: entry.modified }); //reordering doesn't modify the release notes themselves
 
     //Every page shows the folder's navigation, so republish them all when the order changed
     if (reorder.length) {
