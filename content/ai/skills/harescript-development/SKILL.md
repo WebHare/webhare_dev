@@ -1,6 +1,6 @@
 ---
 name: harescript-development
-description: "Use when writing or modifying HareScript (.whlib or .whscr), including macros, functions, objecttypes, and backend tests. Covers K&R brace style, limiting formatting churn, dates, Tollium validationchecks in unvalidated work, and calling TypeScript with CallJS (camelcase conversion, value mapping)."
+description: "Use when writing or modifying HareScript (.whlib or .whscr), including macros, functions, objecttypes, and backend tests. Covers K&R brace style, limiting formatting churn, dates, fast lookups in sorted record arrays with RecordLowerBound (and flagging O(N^2) SELECTs in loops in reviews), Tollium validationchecks in unvalidated work, and calling TypeScript with CallJS (camelcase conversion, value mapping)."
 ---
 
 # HareScript development
@@ -35,6 +35,43 @@ PUBLIC OBJECTTYPE Example <
   `LocalToUTC(AddTimeToDate(starttime, eventdate), "Europe/Amsterdam")`.
   `GetRoundedDatetime(UTCToLocal(now, tz), 24 * 60 * 60 * 1000)` gives the
   local start of the day.
+
+## Lookups in record arrays inside loops
+
+`SELECT ... FROM arr WHERE key = value` scans the whole array. When present
+in another loop, this can easily lead to O(N²) complexity. Ok for small arrays,
+but problematic for large ones. When searching for existance or single records,
+it is possible to optimize the lookup by sorting the array once and using
+a binary search with `RecordLowerBound`.
+
+Usage:
+```
+LOADLIB "wh::util/algorithms.whlib";
+
+RECORD ARRAY sorted := SELECT * FROM arr ORDER BY key1, key2; // no DESC!
+// test
+BOOLEAN exists := RecordLowerBound(sorted, [ key1 := value1,key2 := value2 ], [
+  "KEY1", // Uppercase cell names, same order as the ORDER BY
+  "KEY2"
+]).found;
+// find single record
+RECORD rec := RecordLowerBound(...)
+IF (rec.found) {
+  RECORD foundRecord := existing[rec.position];
+}
+// find multiple records with the same key
+RECORD ARRAY range := RecordRange(...) // same params as RecordLowerBound
+// RecordUpperBound is also present, returns the position after the last matching record
+
+Matches are exact and case-sensitive - add transformed versions of the keys and
+search values if needed.
+
+For simple-value arrays LowerBound and UpperBound are present too, with the
+same return structure.
+
+When reviewing HareScript, flag a `SELECT` or `RecordExists(SELECT ...)` on a
+record array inside a loop over another array that can grow large, and
+suggest this construction.
 
 ## Tollium input validation
 
