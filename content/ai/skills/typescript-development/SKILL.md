@@ -16,6 +16,24 @@ General guidelines:
   for is `node_major` in `etc/platform.conf` in the WebHare installation (`whtree/etc/platform.conf` in a source
   checkout).
 
+Deprecating a re-export:
+- A JSDoc `@deprecated` tag on a re-export (`export { oldName } from "./impl.ts";`) has no effect: editors don't
+  strike through the name. To deprecate an API that you keep re-exporting from another file or package, assign it to
+  a local `const` and deprecate and export that `const`. Overloads are preserved. For a class that is also used as a
+  type, add a type alias with the same name:
+
+  ```typescript
+  import { newName, NewClass } from "@mod-mymodule/js/newlocation";
+
+  /** @deprecated Import newName from \@mod-mymodule/js/newlocation instead */
+  export const oldName = newName;
+
+  /** @deprecated Import NewClass from \@mod-mymodule/js/newlocation instead */
+  export const OldClass = NewClass;
+  /** @deprecated Import NewClass from \@mod-mymodule/js/newlocation instead */
+  export type OldClass = NewClass;
+  ```
+
 Linting:
 - WebHare's ESLint configuration (`@webhare/eslint-config`) treats style issues as errors, which fail
   `wh checkmodule` and CI. In particular, **every file must end with a newline** (`@stylistic/eol-last`) and
