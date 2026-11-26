@@ -36,42 +36,25 @@ PUBLIC OBJECTTYPE Example <
   `GetRoundedDatetime(UTCToLocal(now, tz), 24 * 60 * 60 * 1000)` gives the
   local start of the day.
 
-## Lookups in record arrays inside loops
+## Lookups in arrays inside loops
 
-`SELECT ... FROM arr WHERE key = value` scans the whole array. When present
-in another loop, this can easily lead to O(N²) complexity. Ok for small arrays,
-but problematic for large ones. When searching for existance or single records,
-it is possible to optimize the lookup by sorting the array once and using
-a binary search with `RecordLowerBound`.
+`SELECT ... FROM arr WHERE key = value` and `IN arr` scan the array in O(N) time.
+When trying to avoid O(N^2) complexity:
+- Sort the array with `ORDER BY key1, key2`
+- Lookup matches with `RecordLowerBound(sorted, [ key1 := value1, key2 := value2 ], [ "KEY1", "KEY2" ])`
+  (uppercase key names). Returns `[ found := BOOLEAN, position := INT ]`.
+  If not found, position is insert position.
+- Use `RecordUpperBound` to find the position after the last matching record,
+  `RecordRange` for all matching records.
+- Use `GetSortedSet` to sort and dedup primitive arrays (eg INTEGER ARRAY)
+  and LowerBound/UpperBound for lookups.
+- To reuse lookups in SELECT, use temporaries (only available within the
+  scope of the selection and ORDER BY expressions):
+  `SELECT TEMPORARY pos := RecordLowerBound(sorted, otherarray, [ "KEY1", "KEY2" ]), value := pos.found ? sorted[pos.position] : DEFAULT RECORD FROM otherarray`.
 
-Usage:
-```
-LOADLIB "wh::util/algorithms.whlib";
-
-RECORD ARRAY sorted := SELECT * FROM arr ORDER BY key1, key2; // no DESC!
-// test
-BOOLEAN exists := RecordLowerBound(sorted, [ key1 := value1,key2 := value2 ], [
-  "KEY1", // Uppercase cell names, same order as the ORDER BY
-  "KEY2"
-]).found;
-// find single record
-RECORD rec := RecordLowerBound(...)
-IF (rec.found) {
-  RECORD foundRecord := existing[rec.position];
-}
-// find multiple records with the same key
-RECORD ARRAY range := RecordRange(...) // same params as RecordLowerBound
-// RecordUpperBound is also present, returns the position after the last matching record
-
-Matches are exact and case-sensitive - add transformed versions of the keys and
-search values if needed.
-
-For simple-value arrays LowerBound and UpperBound are present too, with the
-same return structure.
-
-When reviewing HareScript, flag a `SELECT` or `RecordExists(SELECT ...)` on a
-record array inside a loop over another array that can grow large, and
-suggest this construction.
+When reviewing HareScript, flag a `SELECT`, `RecordExists(SELECT ...)` OR `IN`
+on a record array inside a loop over another array that can grow (very)large,
+and suggest optimizing.
 
 ## Tollium input validation
 
