@@ -18,6 +18,11 @@ When adding or modifying HareScript tests, follow the [HareScript development sk
 
 For module-wide validation, including the TypeScript type check, use `wh checkmodule <modulename>`. This takes longer than focused diagnostics and complements rather than replaces behavioral tests.
 
+## Testing WebHare platform changes in isolation
+
+To build and test a branch of the WebHare platform itself (usually a git worktree) without touching the WebHare
+installation you develop with, run it in a devkit container. See the [devkit containers skill](../devkit-containers/SKILL.md).
+
 ## Module tests and HareScript test helpers
 
 - A module's tests are listed in its `tests/testinfo.xml` (`<test script="..."/>`
