@@ -12,9 +12,19 @@ that still use HareScript. Timed-task registration currently uses
 `moduledefinition.xml`; its script can be TypeScript.
 
 Before documenting or implementing an API, verify it against the current
-`@webhare/services` exports and module-definition schema for the target
+`@webhare/tasks` exports and module-definition schema for the target
 WebHare version. Do not copy a plausible API from an old example without
 checking whether it is still supported.
+
+## Importing the task APIs
+
+The TypeScript task APIs (`scheduleTask`, `scheduleTimedTask`,
+`retrieveTaskResult`, `flushTasks`, `TaskRequest`, `TaskResponse` etc.) are
+exported by `@webhare/tasks`, added in WebHare 6.2.1. To check whether a
+WebHare installation has it, import from `@webhare/tasks` and run
+`wh checkmodule <modulename>`: an error that the module `@webhare/tasks`
+cannot be found means the installation predates it. In that case, import
+the same APIs from `@webhare/services`, which still re-exports most of them.
 
 ## Choose the task kind
 
@@ -50,7 +60,7 @@ The runner is a TypeScript function receiving a `TaskRequest` and returning a
 the request; the task runner finalizes the result and commits the work.
 
 ```ts
-import { type TaskRequest, type TaskResponse } from "@webhare/services";
+import { type TaskRequest, type TaskResponse } from "@webhare/tasks";
 import { beginWork } from "@webhare/whdb";
 
 interface ArchiveItemTask {
@@ -64,12 +74,12 @@ export async function archiveItem(req: TaskRequest<ArchiveItemTask>): Promise<Ta
 }
 ```
 
-Schedule the task from TypeScript with the public `@webhare/services` API.
+Schedule the task from TypeScript with `scheduleTask` from `@webhare/tasks`.
 Scheduling requires open work; the task becomes eligible when that work is
 committed.
 
 ```ts
-import { scheduleTask } from "@webhare/services";
+import { scheduleTask } from "@webhare/tasks";
 import { beginWork, commitWork } from "@webhare/whdb";
 
 await beginWork();
@@ -138,7 +148,7 @@ For `<task>`:
 Trigger it from TypeScript with `scheduleTimedTask`:
 
 ```ts
-import { scheduleTimedTask } from "@webhare/services";
+import { scheduleTimedTask } from "@webhare/tasks";
 import { beginWork, commitWork } from "@webhare/whdb";
 
 await beginWork();
@@ -205,8 +215,8 @@ first.
 
 1. Confirm the registration shape and options against the current
    `moduledefinition.yml` schema or `moduledefinition.xml` XSD.
-1. Confirm TypeScript imports against the public `@webhare/services` exports;
-   do not depend on internal SDK paths.
+1. Confirm TypeScript imports against the public `@webhare/tasks` exports;
+   do not depend on internal SDK paths such as `@webhare/services/src/tasks`.
 1. Validate the module and TypeScript task using the repository's normal
    module-check and TypeScript validation workflow.
 

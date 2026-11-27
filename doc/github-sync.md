@@ -22,8 +22,8 @@ in `content/ai/skills/` with their original names and paths. See [AI skills](ai-
 ## Platform import
 The `import_platform` task copies the platform checkout's `doc/release-notes/*.md` to markdown files in
 `reference-next/release-notes` on the site 'www.webhare.dev'. `README.md` becomes `index`, and zero-padded versions
-lose the padding (`6.02.md` becomes `6.2`). New files get the title '<version> release notes'; existing files only
-get their content updated, and only when it changed. Files are never removed from the site. It then sets the order
-of all files in the folder: the index first, then the most recent version (comparing version parts numerically, so 4.30
-sorts after 4.29). When the order changes, all files in the folder are republished, as
-every page shows the folder's navigation.
+lose the padding (`6.02.md` becomes `6.2`). New files get the title '<version> release notes'; existing files only get
+their content updated, and only when it changed, so unchanged release notes keep their modification date. Files are
+never removed from the site. It then sets the order of all files in the folder: the index first, then the most recent
+version (comparing version parts numerically, so 4.30 sorts after 4.29), without changing their modification dates.
+When the order changes, all files in the folder are republished, as every page shows the folder's navigation.
