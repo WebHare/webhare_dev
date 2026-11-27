@@ -1,4 +1,5 @@
 import { runCli } from "@webhare/cli";
+import { listReleaseNoteVersions, readReleaseNotes } from "@mod-platform/js/devsupport/release-notes";
 import { lockMutex, toFSPath } from "@webhare/services";
 import { openSite, whfsType } from "@webhare/whfs";
 import { runInWork } from "@webhare/whdb";
@@ -8,12 +9,34 @@ import { join } from "node:path";
 
 const markdownType = "platform:filetypes.markdown";
 
-/** Map a release notes file name to its WHFS name: README.md becomes the folder's index, '6.02.md' becomes '6.2' */
-function getTargetName(file: string): string {
-  const base = file.replace(/\.md$/i, "");
-  if (base.toLowerCase() === "readme")
-    return "index";
-  return base.replace(/^(\d+)\.0(\d)$/, "$1.$2"); //older release notes used zero-padded minor versions (eg 4.03)
+interface ReleaseNotesSource {
+  /** WHFS name of the release notes: 'index' for the README, else the version (eg '6.2') */
+  name: string;
+  /** Description of where the text came from, for logging */
+  source: string;
+  text: string;
+}
+
+/** Map a release notes version to its WHFS name: '6.02' becomes '6.2' */
+function getTargetName(version: string): string {
+  return version.replace(/^(\d+)\.0(\d)$/, "$1.$2"); //older release notes used zero-padded minor versions (eg 4.03)
+}
+
+/** Read the README and the release notes of every version, with the fragments of unreleased notes merged in */
+async function readReleaseNotesSources(source: string): Promise<ReleaseNotesSource[]> {
+  const result: ReleaseNotesSource[] = [];
+  const readme = (await readdir(source)).find(file => file.toLowerCase() === "readme.md");
+  if (readme)
+    result.push({ name: "index", source: readme, text: await readFile(join(source, readme), "utf8") });
+
+  for (const version of await listReleaseNoteVersions(source)) {
+    const notes = await readReleaseNotes(source, version);
+    if (notes) {
+      const fragments = notes.fragmentFiles.length ? ` and ${notes.fragmentFiles.length} fragment(s) in '${version}/'` : "";
+      result.push({ name: getTargetName(version), source: `${version}.md${fragments}`, text: notes.text });
+    }
+  }
+  return result;
 }
 
 /** Compare release note names so the most recent version sorts first, comparing each version part numerically
@@ -30,26 +53,22 @@ function compareReleaseNotes(lhs: string, rhs: string): number {
   return lhs.localeCompare(rhs);
 }
 
-/** Sync doc/release-notes/ of the platform checkout to reference-next/release-notes on www.webhare.dev. Only creates
-    and updates files: release notes are never removed, as the site also has release notes that aren't in the repository */
+/** Sync doc/release-notes/ of the platform checkout to reference-next/release-notes on www.webhare.dev, including the
+    not yet merged fragments of unreleased versions (doc/release-notes/<version>/*.md). Only creates and updates files:
+    release notes are never removed, as the site also has release notes that aren't in the repository */
 async function importReleaseNotes(checkout: string) {
   const source = join(checkout, "doc/release-notes");
   if (!existsSync(source))
     throw new Error(`No release notes folder at ${source}`);
 
-  const files = (await readdir(source, { withFileTypes: true }))
-    .filter(entry => entry.isFile() && /\.md$/i.test(entry.name))
-    .map(entry => entry.name)
-    .sort();
+  const sources = await readReleaseNotesSources(source);
 
   await runInWork(async () => {
     const site = await openSite("www.webhare.dev");
     const folder = await site.openFolder("reference-next/release-notes");
     const markdown = whfsType(markdownType);
 
-    for (const file of files) {
-      const name = getTargetName(file);
-      const text = await readFile(join(source, file), "utf8");
+    for (const { name, source: from, text } of sources) {
       //Don't use ensureFile: it updates (and thus touches the modification date of) existing files even if nothing changed
       let target = await folder.openFile(name, { allowMissing: true });
       if (target?.type === markdownType) {
@@ -63,7 +82,7 @@ async function importReleaseNotes(checkout: string) {
 
       await markdown.set(target.id, { data: { type: "platform:markdown", text } });
       await target.update({ type: markdownType, publish: true }); //sets the modification date and republishes the file
-      console.log(`Updated '${name}' from '${file}'`);
+      console.log(`Updated '${name}' from ${from}`);
     }
 
     //Order the folder's files (including release notes that aren't in the repository) with the most recent version first
